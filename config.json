@@ -1,0 +1,27 @@
+{
+    "pipeline": {
+        "log_level": "INFO",
+        "log_file": "sketch_to_mermaid_feedback.log"
+    },
+    "input_parser": {
+        "ocr_confidence_threshold": 0.3,
+        "mandatory_ocr": true,
+        "use_backup_ocr": true
+    },
+    "vlm_engine": {
+        "model_name": "Qwen/Qwen-VL-Chat",
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.9,
+        "max_tokens": 1000,
+        "temperature": 0.1,
+        "fallback_enabled": true
+    },
+    "mermaid_generator": {
+        "llm_provider": "openai",
+        "model_name": "gpt-4",
+        "api_key": "${OPENAI_API_KEY}",
+        "max_tokens": 1500,
+        "temperature": 0.3,
+        "fallback_enabled": true
+    }
+}

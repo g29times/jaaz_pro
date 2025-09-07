@@ -1,0 +1,27 @@
+# Core dependencies
+numpy>=1.21.0
+pillow>=8.3.0
+opencv-python>=4.5.0
+aiohttp>=3.8.0
+
+# vLLM for production model serving (instead of hand-rolled)
+vllm>=0.2.0
+
+# Mandatory OCR engines
+paddleocr>=2.6.0
+easyocr>=1.6.0  # Backup OCR
+
+# PDF Processing  
+PyMuPDF>=1.20.0
+
+# Report Generation
+markdown>=3.4.0
+
+# Testing with pytest (instead of unittest)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.10.0
+pytest-cov>=4.0.0
+
+# Development and feedback collection
+structlog>=22.3.0  # Better structured logging
