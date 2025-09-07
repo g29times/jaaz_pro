@@ -288,7 +288,7 @@ print(f"Step performance: {analytics['step_performance']}")
 
 **Sample Generated Mermaid Output:**
 ```mermaid
-flowchart top-down
+flowchart TD
     A([Start]) --> B[Process Input]
     B --> C{Decision Point}
     C -->|Yes| D[Execute Action]
