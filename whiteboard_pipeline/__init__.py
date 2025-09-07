@@ -1,25 +1,25 @@
 """
-Whiteboard Processing Pipeline
+Whiteboard Processing Pipeline - Sketch to Mermaid Focus
 
-A comprehensive pipeline for processing whiteboard inputs (sketches, PDFs, text, arrows)
-and generating various outputs using AI/ML models.
+A production-ready pipeline focused on the core "Sketch → Mermaid" workflow.
+Following the "start small" philosophy to perfect one workflow first.
 """
 
 __version__ = "0.1.0"
 __author__ = "Jaaz Pro Team"
 
-from .pipeline import WhiteboardPipeline
+from .simple_pipeline import SimpleSketchToMermaidPipeline
 from .models import (
     WhiteboardInput,
+    InputType,
     ProcessingResult,
-    TaskPlan,
     GeneratorOutput
 )
 
 __all__ = [
-    "WhiteboardPipeline",
-    "WhiteboardInput", 
+    "SimpleSketchToMermaidPipeline",
+    "WhiteboardInput",
+    "InputType", 
     "ProcessingResult",
-    "TaskPlan",
     "GeneratorOutput"
 ]

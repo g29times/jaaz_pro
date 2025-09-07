@@ -365,3 +365,11 @@ IMPORTANT: Always prioritize CREATE_FLOWCHART intent when process steps, arrows,
                 self.engine = None
             except Exception as e:
                 self.logger.error(f"Error during vLLM cleanup: {e}")
+    
+    async def process(self, input_data):
+        """Implementation of PipelineComponent interface"""
+        if hasattr(input_data, 'elements'):
+            # This is parsed input, analyze intent
+            return await self.analyze_intent(input_data)
+        else:
+            raise ValueError("VLMEngine expects parsed input with elements")

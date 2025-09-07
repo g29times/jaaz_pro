@@ -422,3 +422,11 @@ Return ONLY the Mermaid code, starting with 'flowchart {direction}'."""
         self.logger.info(f"Generation stats: {stats['total_generations']} total, {stats['success_rate']:.1%} success rate")
         
         return stats
+    
+    async def process(self, input_data):
+        """Implementation of PipelineComponent interface"""
+        if hasattr(input_data, 'intent') and hasattr(input_data, 'context'):
+            # This is intent analysis result, generate mermaid
+            return await self.generate_mermaid_flowchart(input_data)
+        else:
+            raise ValueError("MermaidFlowGenerator expects intent analysis result")

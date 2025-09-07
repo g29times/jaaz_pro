@@ -1,0 +1,138 @@
+2025-09-06 21:09:27,769 - SimpleSketchToMermaidPipeline - INFO - __init__:32 - SimpleSketchToMermaidPipeline initialized
+2025-09-06 21:09:27,770 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,770 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,770 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,770 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 229 chars
+2025-09-06 21:09:27,770 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,770 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.7
+2025-09-06 21:09:27,770 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,773 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,773 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,773 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.003489, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,773 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 4.2e-05, 'success': True}
+2025-09-06 21:09:27,773 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 5e-05, 'success': True}
+2025-09-06 21:09:27,773 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.003285, 'success': True}
+2025-09-06 21:09:27,775 - SimpleSketchToMermaidPipeline - INFO - __init__:32 - SimpleSketchToMermaidPipeline initialized
+2025-09-06 21:09:27,775 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,775 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,775 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,775 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 146 chars
+2025-09-06 21:09:27,775 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,775 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.7
+2025-09-06 21:09:27,775 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,776 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,776 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,776 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.001022, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,776 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 4.1e-05, 'success': True}
+2025-09-06 21:09:27,776 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 3.9e-05, 'success': True}
+2025-09-06 21:09:27,776 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.000863, 'success': True}
+2025-09-06 21:09:27,777 - SimpleSketchToMermaidPipeline - INFO - __init__:32 - SimpleSketchToMermaidPipeline initialized
+2025-09-06 21:09:27,777 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,777 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,777 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 29 chars
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.7
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.000927, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 3.9e-05, 'success': True}
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 3.7e-05, 'success': True}
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.000768, 'success': True}
+2025-09-06 21:09:27,778 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 80 chars
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.3
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.000746, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 2.9e-05, 'success': True}
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 2.9e-05, 'success': True}
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.000617, 'success': True}
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 80 chars
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,779 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.7
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.000614, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 2.7e-05, 'success': True}
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 2.9e-05, 'success': True}
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.000495, 'success': True}
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 73 chars
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.7
+2025-09-06 21:09:27,780 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,781 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,781 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,781 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.000598, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,781 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 3.2e-05, 'success': True}
+2025-09-06 21:09:27,781 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 2.7e-05, 'success': True}
+2025-09-06 21:09:27,781 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.000478, 'success': True}
+2025-09-06 21:09:27,781 - SimpleSketchToMermaidPipeline - INFO - get_session_analytics:320 - Session analytics: Success rate 100.0%, Avg duration 0.00s
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - __init__:32 - SimpleSketchToMermaidPipeline initialized
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - health_check:238 - Performing health check on core components
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - health_check:274 - Health check completed: unhealthy
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 21 chars
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.3
+2025-09-06 21:09:27,782 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,783 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,783 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,783 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.000728, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,783 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 2.7e-05, 'success': True}
+2025-09-06 21:09:27,783 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 3e-05, 'success': True}
+2025-09-06 21:09:27,783 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.000604, 'success': True}
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - __init__:32 - SimpleSketchToMermaidPipeline initialized
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 0 chars
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.3
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.000663, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 2.5e-05, 'success': True}
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 2.8e-05, 'success': True}
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.000541, 'success': True}
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,784 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 38 chars
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.7
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.000671, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 2.4e-05, 'success': True}
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 3e-05, 'success': True}
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.000548, 'success': True}
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:73 - [session_20250906_210927] Starting Sketch → Mermaid processing
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:74 - [session_20250906_210927] Input type: text
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:87 - [session_20250906_210927] Step 1: Parsing input
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:100 - [session_20250906_210927] Step 1 completed: 1 elements, 10000 chars
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:104 - [session_20250906_210927] Step 2: Extracting intent
+2025-09-06 21:09:27,785 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:117 - [session_20250906_210927] Step 2 completed: Intent=CREATE_FLOWCHART, Confidence=0.3
+2025-09-06 21:09:27,786 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:121 - [session_20250906_210927] Step 3: Generating Mermaid flowchart
+2025-09-06 21:09:27,786 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:154 - [session_20250906_210927] Step 3 completed: Mermaid file created at /var/folders/7j/h7jct6xd4057s9668dw1wgr40000gn/T/flowchart_session_20250906_210927_20250906_210927.mmd
+2025-09-06 21:09:27,786 - SimpleSketchToMermaidPipeline - INFO - process_sketch_to_mermaid:172 - [session_20250906_210927] Processing completed successfully in 0.00s
+2025-09-06 21:09:27,786 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:220 - FEEDBACK_SUCCESS: {'session_id': 'session_20250906_210927', 'total_duration': 0.000824, 'success': True, 'steps_completed': 3, 'input_type': 'text'}
+2025-09-06 21:09:27,786 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'input_parsing', 'duration': 0.000116, 'success': True}
+2025-09-06 21:09:27,786 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'intent_extraction', 'duration': 5.4e-05, 'success': True}
+2025-09-06 21:09:27,786 - SimpleSketchToMermaidPipeline - INFO - _log_session_feedback:233 - FEEDBACK_STEP: {'session_id': 'session_20250906_210927', 'step': 'mermaid_generation', 'duration': 0.000592, 'success': True}
