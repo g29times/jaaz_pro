@@ -111,8 +111,16 @@ class IntelligentMermaidGenerator:
             bbox = element.metadata['bounding_box']
             if len(bbox) < 4:
                 continue
-                
-            x, y, w, h = bbox[:4]
+            
+            # Handle different bounding box formats
+            if isinstance(bbox[0], (list, tuple)):
+                # If bbox is nested like [[x,y,w,h]] or [(x,y,w,h)]
+                bbox = bbox[0]
+            
+            try:
+                x, y, w, h = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+            except (ValueError, IndexError, TypeError):
+                continue
             
             # Skip very small shapes
             if w < 30 or h < 20:
@@ -196,8 +204,16 @@ class IntelligentMermaidGenerator:
             text_bbox = text_elem.metadata['bounding_box']
             if len(text_bbox) < 4:
                 continue
+            
+            # Handle different bounding box formats
+            if isinstance(text_bbox[0], (list, tuple)):
+                text_bbox = text_bbox[0]
+            
+            try:
+                tx, ty, tw, th = int(text_bbox[0]), int(text_bbox[1]), int(text_bbox[2]), int(text_bbox[3])
+            except (ValueError, IndexError, TypeError):
+                continue
                 
-            tx, ty, tw, th = text_bbox[:4]
             text_center_x = tx + tw // 2
             text_center_y = ty + th // 2
             

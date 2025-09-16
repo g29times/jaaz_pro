@@ -1,6 +1,14 @@
-flowchart top-down
-    A([Start])
-    B[Visual Elements Detected ---]
-    A --> B
-    C([End])
+flowchart TD
+    A{Process}
+    B[Process]
+    C[Process]
+    D[Process]
+    E[Process]
+    F[Process]
+    G[Process]
     B --> C
+    C --> B
+    C --> D
+    C --> F
+    F --> D
+    G --> D
