@@ -1,0 +1,26 @@
+Test Analysis Report: test_flow_chart
+Generated: 20250915_223616
+==================================================
+
+Success: ✅
+Processing Time: 0.094s
+Elements Detected: 1870
+
+Element Breakdown:
+  • shape: 34
+  • arrow: 188
+  • text_region: 1647
+  • text: 1
+
+Generated Mermaid:
+flowchart top-down
+    A([Start])
+    B[Visual Elements Detected ---]
+    A --> B
+    C([End])
+    B --> C
+
+Pipeline Performance:
+  • input_parsing: 0.0906s
+  • intent_extraction: 0.0018s
+  • mermaid_generation: 0.0006s
