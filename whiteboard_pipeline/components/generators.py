@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import json
 import tempfile
+import os
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
@@ -9,6 +10,7 @@ import logging
 
 from ..interfaces import GeneratorInterface
 from ..models import TaskStep, GeneratorOutput, GeneratorType
+from .intelligent_mermaid_generator import IntelligentMermaidGenerator
 
 
 class MermaidFlowGenerator(GeneratorInterface):
@@ -20,15 +22,20 @@ class MermaidFlowGenerator(GeneratorInterface):
         self.api_key = self.config.get('api_key')
         self.model_name = self.config.get('model_name', 'gpt-4')
         
+        # Initialize intelligent Mermaid generator for Phase 2
+        self.intelligent_generator = IntelligentMermaidGenerator(config)
+        self.use_intelligent_analysis = self.config.get('use_intelligent_analysis', True)
+        
         # Enhanced logging setup
         self.logger = logging.getLogger(f"{self.__class__.__name__}")
-        self.logger.info(f"Initializing MermaidFlowGenerator with {self.llm_provider}")
+        self.logger.info(f"Initializing MermaidFlowGenerator with {self.llm_provider} and intelligent analysis")
         
         # Generation statistics for feedback
         self.generation_stats = {
             'total_generations': 0,
             'successful_generations': 0,
             'llm_generations': 0,
+            'intelligent_generations': 0,  # New for Phase 2
             'fallback_generations': 0,
             'avg_generation_time': 0.0
         }
@@ -56,7 +63,39 @@ class MermaidFlowGenerator(GeneratorInterface):
         self.generation_stats['total_generations'] += 1
         
         try:
-            # Attempt LLM-based generation first
+            # Phase 2: Check for visual elements and use intelligent analysis
+            visual_elements = context.get('visual_elements', [])
+            
+            if self.use_intelligent_analysis and visual_elements:
+                self.logger.info(f"[{session_id}] Using intelligent analysis with {len(visual_elements)} visual elements")
+                
+                try:
+                    result = await self.intelligent_generator.generate_from_visual_analysis(visual_elements, session_id)
+                    if result and result.content:
+                        self.generation_stats['intelligent_generations'] += 1
+                        self.logger.info(f"[{session_id}] Intelligent generation successful")
+                        
+                        generation_time = (datetime.now() - generation_start).total_seconds()
+                        self.generation_stats['successful_generations'] += 1
+                        self._update_avg_generation_time(generation_time)
+                        
+                        # Enhanced metadata for intelligent generation
+                        result.metadata.update({
+                            "generation_time": generation_time,
+                            "content_length": len(result.content),
+                            "output_length": len(result.content.split('\n')),
+                            "session_id": session_id,
+                            "created_at": datetime.now().isoformat(),
+                            "success": True
+                        })
+                        
+                        self.logger.info(f"[{session_id}] Intelligent Mermaid generation completed in {generation_time:.2f}s")
+                        return result
+                        
+                except Exception as e:
+                    self.logger.warning(f"[{session_id}] Intelligent generation failed: {e}, falling back to LLM")
+            
+            # Fallback to LLM-based generation
             if self.llm_provider and self.api_key:
                 self.logger.debug(f"[{session_id}] Attempting LLM-based Mermaid generation")
                 

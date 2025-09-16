@@ -137,7 +137,8 @@ class SimpleSketchToMermaidPipeline:
             context = {
                 'parsed_input': parsed_input,
                 'semantic_intent': semantic_intent,
-                'session_id': session_id
+                'session_id': session_id,
+                'visual_elements': parsed_input.elements  # Add visual elements for Phase 2
             }
             
             mermaid_output = await self.mermaid_generator.generate(task_step, context)
