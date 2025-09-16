@@ -1,200 +1,181 @@
 """
-Enhanced Image Processing for Phase 2
-Handles direct image processing with computer vision and OCR
+Image Processor Component  
+Handles computer vision analysis of images for shape, text, and arrow detection
 """
 
+import logging
 import cv2
 import numpy as np
-from PIL import Image, ImageEnhance
-import io
-import tempfile
+from typing import List, Dict, Any, Tuple
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
-import asyncio
-import logging
 import base64
+import io
+from PIL import Image
 
-from ..models import WhiteboardInput, ParsedInput, ParsedElement, InputType
+from ..models import WhiteboardInput, ParsedInput, ParsedElement
 
 
 class ImageProcessor:
-    """Enhanced image processing with computer vision capabilities"""
+    """Process images using computer vision techniques"""
     
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {}
-        self.logger = logging.getLogger(f"{self.__class__.__name__}")
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        self.logger = logging.getLogger(__name__)
         
-        # Image processing parameters
-        self.min_contour_area = self.config.get('min_contour_area', 100)
-        self.max_contour_area = self.config.get('max_contour_area', 50000)
-        self.edge_threshold_low = self.config.get('edge_threshold_low', 50)
-        self.edge_threshold_high = self.config.get('edge_threshold_high', 150)
+        # Configuration parameters
+        self.min_contour_area = config.get('min_contour_area', 100)
+        self.max_contour_area = config.get('max_contour_area', 50000)
+        self.canny_low = config.get('canny_low', 50)
+        self.canny_high = config.get('canny_high', 150)
         
-        # OCR engines (will be initialized if available)
-        self.ocr_engine = None
-        self.backup_ocr_engine = None
+        # Initialize OCR engines
+        self.paddleocr_available = False
+        self.easyocr_available = False
         
-        self._initialize_ocr_engines()
-        self.logger.info("ImageProcessor initialized with computer vision capabilities")
-    
-    def _initialize_ocr_engines(self):
-        """Initialize OCR engines with graceful fallback"""
         try:
-            from paddleocr import PaddleOCR
-            self.ocr_engine = PaddleOCR(
-                use_angle_cls=True,
-                lang='en',
-                show_log=False,
-                det_db_thresh=0.3,
-                det_db_box_thresh=0.5,
-                det_db_unclip_ratio=1.6
-            )
+            import paddleocr
+            self.paddleocr = paddleocr.PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
+            self.paddleocr_available = True
             self.logger.info("PaddleOCR initialized successfully")
         except Exception as e:
             self.logger.warning(f"PaddleOCR not available: {e}")
         
         try:
             import easyocr
-            self.backup_ocr_engine = easyocr.Reader(['en'], gpu=False)
-            self.logger.info("EasyOCR initialized as backup")
+            self.easyocr = easyocr.Reader(['en'])
+            self.easyocr_available = True
+            self.logger.info("EasyOCR initialized successfully")
         except Exception as e:
             self.logger.warning(f"EasyOCR not available: {e}")
     
     async def process_image(self, whiteboard_input: WhiteboardInput) -> ParsedInput:
-        """Main image processing pipeline"""
-        self.logger.info(f"Processing image input: {whiteboard_input.input_type}")
+        """Process image using computer vision analysis"""
+        # Load image
+        image = self._load_image(whiteboard_input)
+        if image is None:
+            return self._create_empty_result("Failed to load image")
         
+        # Convert to OpenCV format
+        cv_image = self._pil_to_cv2(image)
+        
+        # Perform various computer vision analyses
+        elements = []
+        raw_text_parts = []
+        
+        # 1. Shape detection
         try:
-            # Load and preprocess image
-            image = await self._load_image(whiteboard_input)
-            if image is None:
-                return self._create_fallback_result("Failed to load image")
-            
-            # Extract visual elements using computer vision
-            visual_elements = await self._extract_visual_elements(image)
-            
-            # Extract text using OCR
-            text_elements = await self._extract_text_with_ocr(image)
-            
-            # Combine all elements
-            all_elements = visual_elements + text_elements
-            
-            # Generate combined text for downstream processing
-            raw_text = self._combine_extracted_text(all_elements)
-            
-            self.logger.info(f"Successfully processed image: {len(all_elements)} elements extracted")
-            
-            return ParsedInput(
-                elements=all_elements,
-                raw_text=raw_text,
-                metadata={
-                    "input_type": "image",
-                    "processing_method": "computer_vision_ocr",
-                    "visual_elements": len(visual_elements),
-                    "text_elements": len(text_elements),
-                    "total_elements": len(all_elements)
-                }
-            )
-            
+            shape_elements = await self._detect_shapes(cv_image)
+            elements.extend(shape_elements)
+            self.logger.info(f"Detected {len(shape_elements)} shapes")
         except Exception as e:
-            self.logger.error(f"Image processing failed: {e}")
-            return self._create_fallback_result(f"Image processing error: {str(e)}")
+            self.logger.error(f"Shape detection failed: {e}")
+        
+        # 2. Arrow detection
+        try:
+            arrow_elements = await self._detect_arrows(cv_image)
+            elements.extend(arrow_elements)
+            self.logger.info(f"Detected {len(arrow_elements)} arrows")
+        except Exception as e:
+            self.logger.error(f"Arrow detection failed: {e}")
+        
+        # 3. Text region detection
+        try:
+            text_region_elements = await self._detect_text_regions(cv_image)
+            elements.extend(text_region_elements)
+            self.logger.info(f"Detected {len(text_region_elements)} text regions")
+        except Exception as e:
+            self.logger.error(f"Text region detection failed: {e}")
+        
+        # 4. OCR text extraction
+        try:
+            ocr_elements, ocr_text = await self._extract_text_ocr(image)
+            elements.extend(ocr_elements)
+            raw_text_parts.append(ocr_text)
+            self.logger.info(f"OCR extracted {len(ocr_elements)} text elements")
+        except Exception as e:
+            self.logger.error(f"OCR extraction failed: {e}")
+        
+        # Combine all text
+        combined_text = ' '.join(filter(None, raw_text_parts))
+        if not combined_text and elements:
+            # Create summary text from detected elements
+            shape_count = len([e for e in elements if e.element_type == "shape"])
+            text_count = len([e for e in elements if e.element_type == "text"])
+            arrow_count = len([e for e in elements if e.element_type == "arrow"])
+            combined_text = f"Image analyzed: {shape_count} shapes, {text_count} text regions, {arrow_count} arrows detected"
+        
+        return ParsedInput(
+            elements=elements,
+            raw_text=combined_text,
+            metadata={
+                "input_type": "image",
+                "total_elements": len(elements),
+                "shapes_detected": len([e for e in elements if e.element_type == "shape"]),
+                "text_regions_detected": len([e for e in elements if e.element_type == "text"]),
+                "arrows_detected": len([e for e in elements if e.element_type == "arrow"]),
+                "processing_method": "computer_vision",
+                "image_size": f"{cv_image.shape[1]}x{cv_image.shape[0]}"
+            }
+        )
     
-    async def _load_image(self, whiteboard_input: WhiteboardInput) -> Optional[np.ndarray]:
-        """Load image from various input types"""
+    def _load_image(self, whiteboard_input: WhiteboardInput) -> Image.Image:
+        """Load image from various input formats"""
         try:
             if isinstance(whiteboard_input.content, Path):
-                # Load from file path
-                image = cv2.imread(str(whiteboard_input.content))
-                if image is not None:
-                    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            
-            elif isinstance(whiteboard_input.content, (bytes, bytearray)):
-                # Load from bytes
-                nparr = np.frombuffer(whiteboard_input.content, np.uint8)
-                image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                if image is not None:
-                    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            
+                return Image.open(whiteboard_input.content).convert('RGB')
             elif isinstance(whiteboard_input.content, str):
-                # Try to decode as base64
-                try:
-                    image_data = base64.b64decode(whiteboard_input.content)
-                    nparr = np.frombuffer(image_data, np.uint8)
-                    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    if image is not None:
-                        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                except:
-                    # If not base64, might be a file path string
-                    image = cv2.imread(whiteboard_input.content)
-                    if image is not None:
-                        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            
-            return None
-            
+                # Assume base64 encoded
+                image_data = base64.b64decode(whiteboard_input.content)
+                return Image.open(io.BytesIO(image_data)).convert('RGB')
+            elif isinstance(whiteboard_input.content, bytes):
+                return Image.open(io.BytesIO(whiteboard_input.content)).convert('RGB')
+            else:
+                self.logger.error(f"Unsupported image content type: {type(whiteboard_input.content)}")
+                return None
         except Exception as e:
             self.logger.error(f"Failed to load image: {e}")
             return None
     
-    async def _extract_visual_elements(self, image: np.ndarray) -> List[ParsedElement]:
-        """Extract visual elements using computer vision"""
-        elements = []
-        
-        try:
-            # Convert to grayscale for processing
-            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-            
-            # Detect shapes and diagrams
-            shapes = await self._detect_shapes(gray)
-            elements.extend(shapes)
-            
-            # Detect arrows and connections
-            arrows = await self._detect_arrows(gray)
-            elements.extend(arrows)
-            
-            # Detect text regions (for better OCR)
-            text_regions = await self._detect_text_regions(gray)
-            elements.extend(text_regions)
-            
-            self.logger.info(f"Extracted {len(elements)} visual elements")
-            
-        except Exception as e:
-            self.logger.error(f"Visual element extraction failed: {e}")
-        
-        return elements
+    def _pil_to_cv2(self, pil_image: Image.Image) -> np.ndarray:
+        """Convert PIL image to OpenCV format"""
+        return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
     
-    async def _detect_shapes(self, gray_image: np.ndarray) -> List[ParsedElement]:
-        """Detect geometric shapes in the image"""
+    async def _detect_shapes(self, image: np.ndarray) -> List[ParsedElement]:
+        """Detect shapes in the image using contour analysis"""
         elements = []
         
         try:
-            # Edge detection
-            edges = cv2.Canny(gray_image, self.edge_threshold_low, self.edge_threshold_high)
+            # Convert to grayscale
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            
+            # Apply edge detection
+            edges = cv2.Canny(gray, self.canny_low, self.canny_high)
             
             # Find contours
             contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
-            for contour in contours:
+            for i, contour in enumerate(contours):
                 area = cv2.contourArea(contour)
-                if self.min_contour_area < area < self.max_contour_area:
-                    # Analyze shape
+                
+                # Filter by area
+                if self.min_contour_area <= area <= self.max_contour_area:
+                    # Get bounding box
+                    x, y, w, h = cv2.boundingRect(contour)
+                    
+                    # Classify shape type
                     shape_type = self._classify_shape(contour)
                     
-                    if shape_type:
-                        # Get bounding box
-                        x, y, w, h = cv2.boundingRect(contour)
-                        
-                        elements.append(ParsedElement(
-                            element_type="shape",
-                            content=f"{shape_type} at ({x}, {y}) size {w}x{h}",
-                            confidence=0.8,
-                            metadata={
-                                "shape_type": shape_type,
-                                "bounding_box": (x, y, w, h),
-                                "area": area,
-                                "source": "computer_vision"
-                            }
-                        ))
+                    elements.append(ParsedElement(
+                        element_type="shape",
+                        content=f"{shape_type} shape at ({x},{y}) size {w}x{h}",
+                        confidence=0.7,
+                        metadata={
+                            "bounding_box": (x, y, w, h),
+                            "area": area,
+                            "shape_type": shape_type,
+                            "source": "computer_vision"
+                        }
+                    ))
             
             self.logger.info(f"Detected {len(elements)} shapes")
             
@@ -203,95 +184,113 @@ class ImageProcessor:
         
         return elements
     
-    def _classify_shape(self, contour) -> Optional[str]:
-        """Classify detected shape"""
-        try:
-            # Approximate contour
-            epsilon = 0.04 * cv2.arcLength(contour, True)
-            approx = cv2.approxPolyDP(contour, epsilon, True)
-            
-            vertices = len(approx)
-            
-            if vertices == 3:
-                return "triangle"
-            elif vertices == 4:
-                # Check if rectangle or square
-                x, y, w, h = cv2.boundingRect(contour)
-                aspect_ratio = float(w) / h
-                if 0.9 <= aspect_ratio <= 1.1:
-                    return "square"
-                else:
-                    return "rectangle"
-            elif vertices > 8:
-                # Check if circle
-                area = cv2.contourArea(contour)
-                perimeter = cv2.arcLength(contour, True)
-                if perimeter > 0:
-                    circularity = 4 * np.pi * area / (perimeter * perimeter)
-                    if circularity > 0.7:
-                        return "circle"
-            
-            return "polygon"
-            
-        except Exception:
-            return None
+    def _classify_shape(self, contour) -> str:
+        """Classify shape based on contour properties"""
+        # Approximate contour to polygon
+        epsilon = 0.02 * cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, epsilon, True)
+        
+        # Get bounding box for aspect ratio
+        x, y, w, h = cv2.boundingRect(contour)
+        aspect_ratio = w / h if h > 0 else 1
+        
+        # Classify based on number of vertices and aspect ratio
+        vertices = len(approx)
+        
+        if vertices == 3:
+            return "triangle"
+        elif vertices == 4:
+            if 0.95 <= aspect_ratio <= 1.05:
+                return "square"
+            else:
+                return "rectangle"
+        elif vertices > 8:
+            # Check if it's roughly circular
+            area = cv2.contourArea(contour)
+            perimeter = cv2.arcLength(contour, True)
+            if perimeter > 0:
+                circularity = 4 * np.pi * area / (perimeter * perimeter)
+                if circularity > 0.7:
+                    return "circle"
+        
+        return "polygon"
     
-    async def _detect_arrows(self, gray_image: np.ndarray) -> List[ParsedElement]:
-        """Detect arrows and connections"""
+    async def _detect_arrows(self, image: np.ndarray) -> List[ParsedElement]:
+        """Detect arrows using line detection and analysis"""
         elements = []
         
         try:
-            # Use line detection to find potential arrows
-            edges = cv2.Canny(gray_image, 50, 150)
+            # Convert to grayscale
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            
+            # Apply edge detection
+            edges = cv2.Canny(gray, 50, 150)
+            
+            # Use HoughLinesP to detect lines
             lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=50, minLineLength=30, maxLineGap=10)
             
             if lines is not None:
-                for line in lines:
+                for i, line in enumerate(lines):
                     x1, y1, x2, y2 = line[0]
-                    length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
                     
-                    if length > 50:  # Only consider longer lines as potential arrows
+                    # Calculate line properties
+                    length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+                    angle = np.arctan2(y2-y1, x2-x1) * 180 / np.pi
+                    
+                    # Check if this could be an arrow (heuristic)
+                    if length > 20:  # Minimum length for arrows
+                        # Create bounding box for the line
+                        x = min(x1, x2)
+                        y = min(y1, y2)
+                        w = abs(x2 - x1) + 1
+                        h = abs(y2 - y1) + 1
+                        
                         elements.append(ParsedElement(
                             element_type="arrow",
-                            content=f"Connection from ({x1}, {y1}) to ({x2}, {y2})",
+                            content=f"Line/arrow from ({x1},{y1}) to ({x2},{y2})",
                             confidence=0.6,
                             metadata={
+                                "bounding_box": (x, y, w, h),
                                 "start_point": (x1, y1),
                                 "end_point": (x2, y2),
                                 "length": length,
+                                "angle": angle,
                                 "source": "computer_vision"
                             }
                         ))
             
-            self.logger.info(f"Detected {len(elements)} potential arrows/connections")
+            self.logger.info(f"Detected {len(elements)} potential arrows")
             
         except Exception as e:
             self.logger.error(f"Arrow detection failed: {e}")
         
         return elements
     
-    async def _detect_text_regions(self, gray_image: np.ndarray) -> List[ParsedElement]:
-        """Detect text regions for better OCR targeting"""
+    async def _detect_text_regions(self, image: np.ndarray) -> List[ParsedElement]:
+        """Detect text regions using MSER (Maximally Stable Extremal Regions)"""
         elements = []
         
         try:
-            # Use MSER (Maximally Stable Extremal Regions) for text detection
-            mser = cv2.MSER_create()
-            regions, _ = mser.detectRegions(gray_image)
+            # Convert to grayscale
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             
-            for region in regions:
-                if len(region) > 20:  # Filter small regions
-                    # Get bounding rectangle
-                    hull = cv2.convexHull(region.reshape(-1, 1, 2))
-                    x, y, w, h = cv2.boundingRect(hull)
+            # Use MSER to detect text regions
+            mser = cv2.MSER_create()
+            regions, bboxes = mser.detectRegions(gray)
+            
+            for i, bbox in enumerate(bboxes):
+                x, y, w, h = bbox
+                
+                # Filter by size (text regions should be within certain size range)
+                if 10 <= w <= 300 and 10 <= h <= 100:
+                    aspect_ratio = w / h if h > 0 else 1
                     
-                    # Check if region looks like text (aspect ratio)
-                    aspect_ratio = float(w) / h
-                    if 0.2 < aspect_ratio < 10:  # Text-like aspect ratios
+                    # Text regions typically have certain aspect ratios
+                    if 0.1 <= aspect_ratio <= 10:
                         elements.append(ParsedElement(
                             element_type="text_region",
-                            content=f"Text region at ({x}, {y}) size {w}x{h}",
-                            confidence=0.7,
+                            content=f"Text region at ({x},{y}) size {w}x{h}",
+                            confidence=0.5,
                             metadata={
                                 "bounding_box": (x, y, w, h),
                                 "aspect_ratio": aspect_ratio,
@@ -306,108 +305,96 @@ class ImageProcessor:
         
         return elements
     
-    async def _extract_text_with_ocr(self, image: np.ndarray) -> List[ParsedElement]:
+    async def _extract_text_ocr(self, image: Image.Image) -> Tuple[List[ParsedElement], str]:
         """Extract text using OCR engines"""
         elements = []
+        extracted_texts = []
         
-        # Try primary OCR engine
-        if self.ocr_engine:
+        # Try PaddleOCR first
+        if self.paddleocr_available:
             try:
-                result = self.ocr_engine.ocr(image, cls=True)
+                # Convert PIL to numpy array for PaddleOCR
+                img_array = np.array(image)
+                result = self.paddleocr.ocr(img_array, cls=True)
+                
                 if result and result[0]:
                     for line in result[0]:
-                        text = line[1][0]
-                        confidence = line[1][1]
-                        bbox = line[0]
-                        
-                        if confidence > 0.3 and text.strip():
-                            elements.append(ParsedElement(
-                                element_type="text",
-                                content=text.strip(),
-                                confidence=confidence,
-                                metadata={
-                                    "bounding_box": bbox,
-                                    "ocr_engine": "paddleocr",
-                                    "source": "ocr"
-                                }
-                            ))
+                        if len(line) >= 2:
+                            bbox = line[0]  # Bounding box points
+                            text_info = line[1]  # (text, confidence)
+                            
+                            if len(text_info) >= 2:
+                                text = text_info[0]
+                                confidence = text_info[1]
+                                
+                                if confidence > 0.3 and text.strip():
+                                    extracted_texts.append(text.strip())
+                                    
+                                    elements.append(ParsedElement(
+                                        element_type="text",
+                                        content=text.strip(),
+                                        confidence=confidence,
+                                        metadata={
+                                            "bounding_box": bbox,
+                                            "ocr_engine": "paddleocr",
+                                            "source": "ocr"
+                                        }
+                                    ))
                 
                 self.logger.info(f"PaddleOCR extracted {len(elements)} text elements")
                 
             except Exception as e:
                 self.logger.warning(f"PaddleOCR failed: {e}")
         
-        # Try backup OCR if primary failed or found nothing
-        if not elements and self.backup_ocr_engine:
+        # Try EasyOCR as fallback
+        if self.easyocr_available and not elements:
             try:
-                result = self.backup_ocr_engine.readtext(image)
-                for (bbox, text, confidence) in result:
-                    if confidence > 0.3 and text.strip():
-                        elements.append(ParsedElement(
-                            element_type="text",
-                            content=text.strip(),
-                            confidence=confidence,
-                            metadata={
-                                "bounding_box": bbox,
-                                "ocr_engine": "easyocr",
-                                "source": "ocr"
-                            }
-                        ))
+                img_array = np.array(image)
+                result = self.easyocr.readtext(img_array)
+                
+                for detection in result:
+                    if len(detection) >= 3:
+                        bbox = detection[0]  # Bounding box points
+                        text = detection[1]   # Extracted text
+                        confidence = detection[2]  # Confidence score
+                        
+                        if confidence > 0.3 and text.strip():
+                            extracted_texts.append(text.strip())
+                            
+                            elements.append(ParsedElement(
+                                element_type="text",
+                                content=text.strip(),
+                                confidence=confidence,
+                                metadata={
+                                    "bounding_box": bbox,
+                                    "ocr_engine": "easyocr",
+                                    "source": "ocr"
+                                }
+                            ))
                 
                 self.logger.info(f"EasyOCR extracted {len(elements)} text elements")
                 
             except Exception as e:
                 self.logger.warning(f"EasyOCR failed: {e}")
         
-        # If both OCR engines failed, create a placeholder
-        if not elements:
-            elements.append(ParsedElement(
-                element_type="text",
-                content="[OCR extraction unavailable - fallback mode]",
-                confidence=0.1,
-                metadata={
-                    "source": "fallback",
-                    "note": "OCR engines not available or failed"
-                }
-            ))
-        
-        return elements
+        combined_text = ' '.join(extracted_texts)
+        return elements, combined_text
     
-    def _combine_extracted_text(self, elements: List[ParsedElement]) -> str:
-        """Combine all extracted text elements into a single string"""
-        text_parts = []
-        
-        # Separate text elements from visual elements
-        text_elements = [e for e in elements if e.element_type == "text"]
-        visual_elements = [e for e in elements if e.element_type != "text"]
-        
-        # Add text content
-        for element in text_elements:
-            text_parts.append(element.content)
-        
-        # Add visual element descriptions
-        if visual_elements:
-            text_parts.append("\n--- Visual Elements Detected ---")
-            for element in visual_elements:
-                text_parts.append(f"{element.element_type}: {element.content}")
-        
-        return "\n".join(text_parts)
-    
-    def _create_fallback_result(self, error_message: str) -> ParsedInput:
-        """Create fallback result when processing fails"""
+    def _create_empty_result(self, error_message: str) -> ParsedInput:
+        """Create empty result with error information"""
         return ParsedInput(
             elements=[
                 ParsedElement(
                     element_type="error",
-                    content=f"Image processing failed: {error_message}",
+                    content=error_message,
                     confidence=0.0,
-                    metadata={"source": "fallback", "error": error_message}
+                    metadata={"source": "image_processor_error"}
                 )
             ],
-            raw_text=f"Image processing failed: {error_message}",
+            raw_text=error_message,
             metadata={
                 "input_type": "image",
-                "processing_method": "fallback",
-                "error": error_message
+                "processing_method": "error",
+                "error": True
             }
         )

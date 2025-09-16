@@ -1,14 +1,13 @@
 flowchart TD
-    A{Process}
-    B[Process]
-    C[Process]
-    D[Process]
-    E[Process]
-    F[Process]
-    G[Process]
+    A[Print B largest]
+    B{A > C?}
+    C{B > C?}
+    D{A > B?}
+    E[Read A, B, C]
+    F[Start]
+    A --> B
+    B --> A
     B --> C
-    C --> B
-    C --> D
-    C --> F
-    F --> D
-    G --> D
+    B --> E
+    E --> C
+    F --> C
