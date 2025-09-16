@@ -2,31 +2,31 @@
 
 A production-ready Python pipeline that converts whiteboard sketches and text into Mermaid flowcharts. **Start small philosophy** - focused on getting the core "Sketch → Mermaid" workflow working perfectly first.
 
-## 🎯 Core Workflow
+## 🎯 Core Workflow (Current + Planned)
 
 ```
-[ Whiteboard Input: Sketch / Text ]
+[ Multi-Modal Input: Text / Image / Sketch / PDF ]
           │
           ▼
    ┌──────────────┐
-   │ Mandatory    │ ← PaddleOCR + EasyOCR backup
-   │ OCR Parser   │   (No fallback to text-only)
+   │ Smart Input  │ ← Current: Text processing ✅
+   │   Parser     │   Phase 2: Image/PDF processing 🚀
+   └──────┬───────┘   Phase 2: Computer vision analysis 🚀
+          │
+          ▼
+   ┌──────────────┐
+   │  vLLM Engine │ ← Production vLLM (macOS: OpenAI API)
+   │              │   Intent: CREATE_FLOWCHART | GENERATE_IMAGE
    └──────┬───────┘
           │
           ▼
    ┌──────────────┐
-   │  vLLM Engine │ ← Production vLLM (not hand-rolled)
-   │              │   Qwen-VL → CREATE_FLOWCHART intent
-   └──────┬───────┘
+   │   Output     │ ← Current: Mermaid Generator ✅
+   │  Generator   │   Phase 3: Diffusion Image Generator 🎨
+   └──────┬───────┘   Phase 3: DALL-E Integration 🎨
           │
           ▼
-   ┌──────────────┐
-   │   Mermaid    │ ← GPT-4/Claude → .mmd files
-   │  Generator   │   With intelligent fallbacks
-   └──────┬───────┘
-          │
-          ▼
-[ 📄 Mermaid Flowchart + 📊 Comprehensive Feedback Logs ]
+[ 📄 Mermaid Flowcharts + 🎨 Generated Images + 📊 Feedback Logs ]
 ```
 
 ## 🚀 Key Improvements (Production Ready)
@@ -300,11 +300,40 @@ flowchart TD
 ## 🚧 Roadmap (After Core is Perfect)
 
 1. **Phase 1** ✅: Perfect Sketch → Mermaid (COMPLETED - tested with 100% success rate)
-2. **Phase 2**: Enhance OCR reliability (resolve macOS network connectivity issues)
-3. **Phase 3**: Add vLLM support for macOS (currently using OpenAI API fallback)
-4. **Phase 4**: Add Image → Mermaid (actual sketch image processing)
-5. **Phase 5**: Add other output formats (reports, diagrams)
-6. **Phase 6**: Fine-tune with collected feedback data
+2. **Phase 2** 🚀: Add Image Input Capability
+   - Direct image/sketch processing (PNG, JPG, PDF)
+   - Enhanced OCR extraction from whiteboard images
+   - Computer vision for diagram element detection
+3. **Phase 3** 🎨: Add Generative Image Output
+   - Integrate diffusion models (Stable Diffusion, DALL-E)
+   - Generate visual diagrams from text descriptions
+   - Create illustrated flowcharts and process diagrams
+4. **Phase 4**: Multi-Modal Pipeline Enhancement
+   - Image → Enhanced Mermaid (with visual analysis)
+   - Text → Generated Images + Mermaid
+   - Sketch → Refined Visual Diagrams
+5. **Phase 5**: Advanced Output Formats
+   - Interactive diagrams (HTML/JS)
+   - Technical documentation with visuals
+   - Presentation-ready formats
+6. **Phase 6**: Production Optimizations
+   - Enhance OCR reliability (resolve macOS network issues)
+   - Add vLLM support for macOS
+   - Fine-tune with collected feedback data
+
+## 🎯 Next Development Priorities
+
+**Phase 2: Image Input (In Progress)**
+- [ ] Implement direct image processing pipeline
+- [ ] Add support for PNG, JPG, PDF whiteboard uploads  
+- [ ] Integrate computer vision for diagram element detection
+- [ ] Enhanced OCR text extraction from images
+
+**Phase 3: Generative Image Output (Planned)**
+- [ ] Integrate Stable Diffusion for diagram generation
+- [ ] Add DALL-E API integration as fallback
+- [ ] Create visual flowchart generation from text
+- [ ] Implement image style customization options
 
 ## 🔧 Key Technical Decisions & Current Status
 
