@@ -19,9 +19,9 @@
     "mermaid_generator": {
         "llm_provider": "ollama",
         "ollama_url": "http://localhost:11434",
-        "ollama_model": "qwen3-vl:235b-cloud",
+        "ollama_model": "qwen2.5vl:latest",
         "temperature": 0.3,
-        "timeout": 120,
+        "timeout": 60,
         "fallback_enabled": true,
         "use_intelligent_analysis": true
     }

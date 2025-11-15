@@ -21,7 +21,7 @@ async def test_ollama_health():
 
     config = {
         'ollama_url': 'http://localhost:11434',
-        'ollama_model': 'qwen3-vl:235b-cloud',
+        'ollama_model': 'qwen2.5vl:latest',
         'temperature': 0.7
     }
 
@@ -59,7 +59,7 @@ async def test_simple_generation():
 
     config = {
         'ollama_url': 'http://localhost:11434',
-        'ollama_model': 'qwen3-vl:235b-cloud',
+        'ollama_model': 'qwen2.5vl:latest',
         'temperature': 0.7,
         'timeout': 45
     }
@@ -69,7 +69,7 @@ async def test_simple_generation():
     prompt = "What are the three main steps in a user login process?"
 
     print(f"\nPrompt: {prompt}")
-    print("\nGenerating response with qwen3-vl:235b-cloud...\n")
+    print("\nGenerating response with qwen2.5vl (Vision-Language Model)...\n")
 
     response = await client.generate(prompt)
 
@@ -93,7 +93,7 @@ async def test_mermaid_generation():
 
     config = {
         'ollama_url': 'http://localhost:11434',
-        'ollama_model': 'qwen3-vl:235b-cloud',
+        'ollama_model': 'qwen2.5vl:latest',
         'temperature': 0.3,  # Lower temperature for more consistent code
         'timeout': 60
     }
@@ -111,7 +111,7 @@ async def test_mermaid_generation():
 
     print(f"\nProcess Description:")
     print(test_description)
-    print("\nGenerating Mermaid flowchart with qwen3-vl:235b-cloud...\n")
+    print("\nGenerating Mermaid flowchart with qwen2.5vl (8.3B Vision-Language Model)...\n")
 
     mermaid_code = await client.generate_mermaid_from_text(test_description, "TD")
 
@@ -213,10 +213,10 @@ async def main():
     if not results[0]:
         print("\n⚠️  Ollama server not available. Please start Ollama:")
         print("   $ ollama serve")
-        print("\nFor cloud model (recommended):")
-        print("   $ ollama run qwen3-vl:235b-cloud")
-        print("\nOr use a local model:")
-        print("   $ ollama pull llama3.2")
+        print("\nYou have these models available:")
+        print("   • qwen2.5vl:latest (8.3B Vision-Language - Recommended)")
+        print("   • llama3.2:latest (3.2B - Fast)")
+        print("   • deepseek-r1:latest (7.6B - Reasoning)")
         return
 
     # Test 2: Simple generation
