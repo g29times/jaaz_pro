@@ -17,11 +17,12 @@
         "fallback_enabled": true
     },
     "mermaid_generator": {
-        "llm_provider": "openai",
-        "model_name": "gpt-4",
-        "api_key": "${OPENAI_API_KEY}",
-        "max_tokens": 1500,
+        "llm_provider": "ollama",
+        "ollama_url": "http://localhost:11434",
+        "ollama_model": "qwen3-vl:235b-cloud",
         "temperature": 0.3,
-        "fallback_enabled": true
+        "timeout": 120,
+        "fallback_enabled": true,
+        "use_intelligent_analysis": true
     }
 }

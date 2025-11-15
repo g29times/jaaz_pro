@@ -31,10 +31,11 @@ A production-ready Python pipeline that converts whiteboard sketches and text in
 
 ## 🚀 Key Improvements (Production Ready)
 
-✅ **Use vLLM** — Production-ready model serving, not hand-rolled HTTP calls  
-✅ **OCR is mandatory** — Reliable text extraction with PaddleOCR + EasyOCR backup  
-✅ **Start small** — Perfect the core "Sketch → Mermaid" workflow first  
-✅ **Log everything** — Comprehensive feedback collection for fine-tuning  
+✅ **Local LLM with Ollama** — Zero-cost local inference for development, production API available
+✅ **Use vLLM** — Production-ready model serving (Linux), Ollama fallback (macOS)
+✅ **OCR is mandatory** — Reliable text extraction with PaddleOCR + EasyOCR backup
+✅ **Start small** — Perfect the core "Sketch → Mermaid" workflow first
+✅ **Log everything** — Comprehensive feedback collection for fine-tuning
 ✅ **pytest** — Professional testing framework instead of unittest  
 
 ## 📦 Quick Start
@@ -109,10 +110,17 @@ asyncio.run(main())
 # Activate environment
 source venv/bin/activate
 
+# Option 1: Using Ollama (local, free)
+# Make sure Ollama is running: ollama serve
+python test_ollama_integration.py  # Test LLM integration
+
+# Run comprehensive examples (uses config.json LLM provider)
+python simple_examples.py
+
+# Option 2: Using OpenAI API (requires API key)
 # Set API key
 export OPENAI_API_KEY='your-openai-api-key-here'
-
-# Run comprehensive examples
+# Update config.json to use "llm_provider": "openai"
 python simple_examples.py
 
 # Run tests
@@ -136,8 +144,12 @@ pytest test_simple_pipeline.py -v
         "fallback_enabled": true
     },
     "mermaid_generator": {
-        "llm_provider": "openai",
-        "api_key": "${OPENAI_API_KEY}"
+        "llm_provider": "ollama",
+        "ollama_url": "http://localhost:11434",
+        "ollama_model": "qwen3-vl:235b-cloud",
+        "temperature": 0.3,
+        "timeout": 120,
+        "fallback_enabled": true
     }
 }
 ```
@@ -215,11 +227,137 @@ python simple_examples.py
 
 ## ⚙️ Production Setup
 
-### Environment Variables (Required)
+### LLM Backend Options
+
+The pipeline supports multiple LLM backends with different trade-offs:
+
+| Backend | Quality | Cost | Speed | Setup | Use Case |
+|---------|---------|------|-------|-------|----------|
+| **Ollama Cloud** ⭐ | ⭐⭐⭐⭐⭐ | $ | Medium | Easy | **Recommended** - Best balance |
+| Ollama Local | ⭐⭐⭐ | Free | Fast | Easy | Development, offline |
+| OpenAI API | ⭐⭐⭐⭐⭐ | $$$ | Fast | Easy | Production with budget |
+
+1. **Ollama Cloud (qwen3-vl:235b)** - Recommended for quality + cost balance
+2. **Ollama Local** - For development and offline use
+3. **OpenAI API** - For maximum quality with higher budget
+
+#### Option 1: Ollama (Local & Cloud Models - Recommended)
+
+Ollama supports both local models and cloud-based large models through a unified interface.
+
+**Installation:**
+```bash
+# macOS
+brew install ollama
+
+# Linux
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Start Ollama server
+ollama serve
+```
+
+**Model Options:**
+
+**Cloud Models (Recommended for Quality):**
+```bash
+# Large vision-language model via cloud API (no download needed)
+ollama run qwen3-vl:235b-cloud   # 235B parameters, best quality ⭐
+
+# This model runs in the cloud but uses Ollama's interface
+# Benefits: No local storage, high quality, still cheaper than OpenAI
+```
+
+**Local Models (For Offline/Privacy):**
+```bash
+# Small, fast models (run locally on your machine)
+ollama pull llama3.2        # 3.2B parameters
+ollama pull mistral         # 7B parameters
+ollama pull llama3:8b       # 8B parameters
+
+# Vision-language models (for Phase 2 image processing)
+ollama pull qwen2.5vl       # 8.3B with vision capabilities
+```
+
+**Configuration (config.json):**
+
+**For Cloud Model (Recommended):**
+```json
+{
+    "mermaid_generator": {
+        "llm_provider": "ollama",
+        "ollama_url": "http://localhost:11434",
+        "ollama_model": "qwen3-vl:235b-cloud",
+        "temperature": 0.3,
+        "timeout": 120,
+        "fallback_enabled": true
+    }
+}
+```
+
+**For Local Model:**
+```json
+{
+    "mermaid_generator": {
+        "llm_provider": "ollama",
+        "ollama_url": "http://localhost:11434",
+        "ollama_model": "llama3.2",
+        "temperature": 0.3,
+        "timeout": 60,
+        "fallback_enabled": true
+    }
+}
+```
+
+**Test the integration:**
+```bash
+source venv/bin/activate
+
+# Cloud model (no pull needed, just run)
+ollama run qwen3-vl:235b-cloud "Test prompt"
+
+# Then test the pipeline
+python test_ollama_integration.py
+```
+
+**Benefits:**
+
+**Cloud Models:**
+- ✅ **Best Quality** - 235B parameters vs 3-7B local models
+- ✅ **Vision Capabilities** - Perfect for Phase 2 image processing
+- ✅ **No Storage** - No need to download large model files
+- ✅ **Unified Interface** - Same Ollama API as local models
+- ✅ **Cost Effective** - Still cheaper than OpenAI API
+
+**Local Models:**
+- ✅ **Zero API costs** - completely free
+- ✅ **Fast iteration** - no rate limits
+- ✅ **Privacy** - all processing stays local
+- ✅ **Works offline** - no internet required
+- ✅ **Multiple models** - easy to switch and compare
+
+**Note for Claude Code users:** You may need to allow network access through the Claude Code dashboard at http://localhost:4564 (Tools tab).
+
+#### Option 2: OpenAI API (Production)
+
+**Environment Variables (Required)**
 
 ```bash
 export OPENAI_API_KEY="your-openai-api-key"
 # Optional: ANTHROPIC_API_KEY for Claude fallback
+```
+
+**Configuration (config.json):**
+```json
+{
+    "mermaid_generator": {
+        "llm_provider": "openai",
+        "api_key": "${OPENAI_API_KEY}",
+        "model_name": "gpt-4",
+        "temperature": 0.3,
+        "fallback_enabled": true
+    }
+}
 ```
 
 ### Platform-Specific Setup
@@ -376,7 +514,9 @@ Focus on getting text and image sketch processing working at high quality before
 
 ## 🔧 Key Technical Decisions & Current Status
 
-- **vLLM Integration** ⚠️: Implemented but disabled on macOS due to build issues, uses OpenAI API directly
+- **Ollama Integration** ✅: Local LLM for cost-free development with easy model switching
+- **vLLM Integration** ⚠️: Available on Linux, not supported on macOS
+- **OpenAI API** ⚠️: Available as production fallback, requires API key
 - **Mandatory OCR** ⚠️: Implemented with dual-engine fallback, currently in fallback mode on macOS
 - **Start Small** ✅: Core Sketch → Mermaid workflow perfected and tested
 - **Log Everything** ✅: Comprehensive session tracking and feedback collection implemented

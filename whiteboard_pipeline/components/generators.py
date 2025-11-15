@@ -19,15 +19,25 @@ class MermaidFlowGenerator:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        
+
         # Configuration
         self.fallback_enabled = config.get('fallback_enabled', True)
         self.use_intelligent_analysis = config.get('use_intelligent_analysis', True)
-        
+
         # LLM configuration
-        self.llm_provider = config.get('llm_provider', 'openai')
+        self.llm_provider = config.get('llm_provider', 'ollama')  # Default to Ollama
         self.api_key = config.get('api_key')
-        
+
+        # Initialize Ollama client for local LLM
+        self.ollama_client = None
+        if self.llm_provider == 'ollama':
+            try:
+                from .ollama_client import OllamaClient
+                self.ollama_client = OllamaClient(config)
+                self.logger.info("Ollama client initialized for local LLM")
+            except ImportError as e:
+                self.logger.warning(f"Ollama client not available: {e}")
+
         # Initialize intelligent generator
         self.intelligent_generator = None
         if self.use_intelligent_analysis:
@@ -38,7 +48,7 @@ class MermaidFlowGenerator:
             except ImportError as e:
                 self.logger.warning(f"Intelligent generator not available: {e}")
                 self.use_intelligent_analysis = False
-        
+
         # Generation statistics
         self.generation_stats = {
             'total_generations': 0,
@@ -46,7 +56,7 @@ class MermaidFlowGenerator:
             'llm_generations': 0,
             'fallback_generations': 0
         }
-        
+
         # Performance tracking
         self.avg_generation_time = 0.0
         self._generation_times = []
@@ -158,9 +168,42 @@ class MermaidFlowGenerator:
             )
     
     async def _generate_mermaid_with_llm(self, content: str, direction: str, context: Dict[str, Any], session_id: str) -> Optional[str]:
-        """Generate Mermaid code using LLM"""
-        # This would integrate with OpenAI or other LLM providers
-        # For now, return None to trigger fallback
+        """Generate Mermaid code using LLM (Ollama or OpenAI)"""
+
+        # Try Ollama first if configured
+        if self.llm_provider == 'ollama' and self.ollama_client:
+            self.logger.info(f"[{session_id}] Generating Mermaid with Ollama")
+
+            try:
+                # Check if we have visual elements to work with
+                visual_elements = context.get('visual_elements', [])
+
+                if visual_elements:
+                    # Use elements-based generation
+                    mermaid_code = await self.ollama_client.generate_mermaid_from_elements(
+                        visual_elements,
+                        {'flow_direction': direction}
+                    )
+                else:
+                    # Use text-based generation
+                    mermaid_code = await self.ollama_client.generate_mermaid_from_text(
+                        content,
+                        direction
+                    )
+
+                if mermaid_code:
+                    self.logger.info(f"[{session_id}] Ollama generation successful")
+                    return mermaid_code
+                else:
+                    self.logger.warning(f"[{session_id}] Ollama returned empty result")
+
+            except Exception as e:
+                self.logger.warning(f"[{session_id}] Ollama generation failed: {e}")
+
+        # TODO: Add OpenAI API fallback here for production
+        # if self.llm_provider == 'openai' and self.api_key:
+        #     return await self._generate_with_openai(content, direction, context)
+
         return None
     
     def _generate_fallback_mermaid(self, content: str, direction: str, context: Dict[str, Any], session_id: str) -> str:
