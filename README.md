@@ -54,78 +54,36 @@ chmod +x setup.sh
 python3 -m venv venv
 source venv/bin/activate
 
-# For macOS (OCR libraries have compatibility issues)
+# For macOS
 pip install -r requirements_macos.txt
 
 # For Linux (full requirements with vLLM)
 pip install -r requirements.txt
 ```
 
-### Basic Usage - Core Workflow
-
-```python
-import asyncio
-from whiteboard_pipeline.simple_pipeline import SimpleSketchToMermaidPipeline
-from whiteboard_pipeline.models import WhiteboardInput, InputType
-
-async def main():
-    # Initialize the focused pipeline  
-    config = {
-        "pipeline": {"log_level": "INFO"},
-        "input_parser": {"ocr_confidence_threshold": 0.3},
-        "vlm_engine": {"fallback_enabled": True},
-        "mermaid_generator": {"fallback_enabled": True}
-    }
-    pipeline = SimpleSketchToMermaidPipeline(config)
-    
-    # Input: Text describing a process
-    input_data = WhiteboardInput(
-        content="User login: 1. Enter credentials 2. Validate 3. Grant access",
-        input_type=InputType.TEXT
-    )
-    
-    # Process: Sketch → Mermaid
-    result = await pipeline.process_sketch_to_mermaid(input_data)
-    
-    if result.success:
-        print(f"✅ Generated Mermaid flowchart: {result.outputs[0].file_path}")
-        print(result.outputs[0].content)
-        
-        # View feedback data
-        session_log = result.feedback_data['session_log']
-        print(f"📈 Completed in {result.execution_time:.2f}s with {len(session_log['steps'])} steps")
-    else:
-        print(f"❌ Error: {result.error_message}")
-
-# Set environment variable (required)
-import os
-os.environ['OPENAI_API_KEY'] = 'your-openai-api-key-here'
-
-asyncio.run(main())
-```
-
-### Quick Test
+### Setup Ollama (Local LLM)
 
 ```bash
-# Activate environment
-source venv/bin/activate
+# Install Ollama
+brew install ollama  # macOS
+# curl -fsSL https://ollama.ai/install.sh | sh  # Linux
 
-# Option 1: Using Ollama (local, free)
-# Make sure Ollama is running: ollama serve
-python test_ollama_integration.py  # Test LLM integration
+# Start Ollama server
+ollama serve
 
-# Run comprehensive examples (uses config.json LLM provider)
-python simple_examples.py
-
-# Option 2: Using OpenAI API (requires API key)
-# Set API key
-export OPENAI_API_KEY='your-openai-api-key-here'
-# Update config.json to use "llm_provider": "openai"
-python simple_examples.py
-
-# Run tests
-pytest test_simple_pipeline.py -v
+# Verify model (already available)
+ollama list  # Should show qwen2.5vl:latest
 ```
+
+### Run Demo
+
+```bash
+source venv/bin/activate
+python demo.py              # Run all examples
+python demo.py --quick      # Quick test
+```
+
+**See [QUICK_START.md](QUICK_START.md) for detailed setup guide.**
 
 ### Configuration (Simplified)
 
@@ -213,17 +171,27 @@ pytest test_simple_pipeline.py::TestSimpleSketchToMermaidPipeline -v
 
 ## 📚 Examples
 
-See `simple_examples.py` for comprehensive demonstrations:
-
-- **Core Workflow**: Text → Mermaid conversion
-- **Simulated Sketches**: OCR output → Mermaid
-- **Iterative Processing**: Multiple workflows for feedback collection
-- **Health Monitoring**: System status and component checks
-- **Error Handling**: Graceful degradation and recovery
+**Main Demo File**: `demo.py`
 
 ```bash
-python simple_examples.py
+# Run all examples (recommended)
+python demo.py
+
+# Quick test only
+python demo.py --quick
+
+# Help
+python demo.py --help
 ```
+
+### Examples Included
+
+1. **Simple Text → Flowchart**: Basic process conversion
+2. **Complex Decision Flow**: Multiple branches and decisions
+3. **Batch Processing**: Process multiple diagrams
+4. **Real-World Use Case**: CI/CD pipeline example
+
+All examples use **LLM as PRIMARY method** for understanding requirements and generating flowcharts.
 
 ## ⚙️ Production Setup
 

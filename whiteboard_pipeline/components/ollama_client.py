@@ -159,7 +159,7 @@ Now generate the flowchart:"""
 
         return text.strip()
 
-    async def generate_mermaid_from_elements(self, elements: List[Dict[str, Any]],
+    async def generate_mermaid_from_elements(self, elements: List[Any],
                                             context: Dict[str, Any]) -> Optional[str]:
         """Generate Mermaid flowchart from parsed visual elements"""
 
@@ -169,8 +169,16 @@ Generate clean, syntactically correct Mermaid flowchart code that represents the
         # Build description of elements
         element_descriptions = []
         for i, elem in enumerate(elements[:20]):  # Limit to first 20 elements
-            elem_type = elem.get('element_type', 'unknown')
-            content = elem.get('content', '')
+            # Handle both dict and ParsedElement objects
+            if hasattr(elem, 'element_type'):
+                # ParsedElement object
+                elem_type = elem.element_type
+                content = elem.content
+            else:
+                # Dictionary
+                elem_type = elem.get('element_type', 'unknown')
+                content = elem.get('content', '')
+
             element_descriptions.append(f"{i+1}. {elem_type}: {content}")
 
         elements_text = '\n'.join(element_descriptions)

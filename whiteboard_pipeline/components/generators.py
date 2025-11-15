@@ -65,27 +65,73 @@ class MermaidFlowGenerator:
         """Generate Mermaid diagram from task step and context"""
         session_id = context.get('session_id', 'unknown')
         generation_start = datetime.now()
-        
+
         try:
             content = task_step.parameters.get('content', '')
             direction = task_step.parameters.get('direction', 'TD')
-            
+
             self.generation_stats['total_generations'] += 1
-            
-            # Try intelligent generation first if available
+
             visual_elements = context.get('visual_elements', [])
-            
-            if self.use_intelligent_analysis and visual_elements:
-                self.logger.info(f"[{session_id}] Using intelligent analysis with {len(visual_elements)} visual elements")
-                
+            input_type = context.get('input_type', 'text')
+
+            # NEW PRIORITY ORDER: Choose strategy based on input type
+
+            # Strategy 1: For TEXT input, use LLM as PRIMARY method
+            if input_type == 'text' or not visual_elements:
+                self.logger.info(f"[{session_id}] Text input detected, using LLM as primary method")
+
+                # Try LLM first for text understanding
+                if self.ollama_client or (self.llm_provider and self.api_key):
+                    self.logger.info(f"[{session_id}] Generating Mermaid with LLM (primary method)")
+
+                    mermaid_code = await self._generate_mermaid_with_llm(content, direction, context, session_id)
+
+                    if mermaid_code:
+                        generation_time = (datetime.now() - generation_start).total_seconds()
+                        self.generation_stats['llm_generations'] += 1
+                        self._update_avg_generation_time(generation_time)
+
+                        output_path = self._create_output_file(mermaid_code, session_id)
+
+                        self.logger.info(f"[{session_id}] LLM generation successful in {generation_time:.2f}s")
+
+                        return GeneratorOutput(
+                            content=mermaid_code,
+                            output_type='mermaid',
+                            file_path=output_path,
+                            metadata={
+                                'generation_method': 'llm',
+                                'generator': 'ollama' if self.ollama_client else 'openai',
+                                'model': self.config.get('ollama_model', 'unknown'),
+                                'generation_time': generation_time,
+                                'content_length': len(mermaid_code),
+                                'output_length': len(mermaid_code.split('\n')),
+                                'session_id': session_id,
+                                'created_at': datetime.now().isoformat(),
+                                'success': True,
+                                'priority': 'primary'
+                            }
+                        )
+                    else:
+                        self.logger.warning(f"[{session_id}] LLM generation returned empty, falling back")
+
+                # Fallback to rule-based for text input
+                self.logger.info(f"[{session_id}] Using rule-based fallback for text input")
+                mermaid_code = self._generate_fallback_mermaid(content, direction, context, session_id)
+
+            # Strategy 2: For IMAGE input with visual shapes, use CV analysis first
+            elif self.use_intelligent_analysis and visual_elements:
+                self.logger.info(f"[{session_id}] Image input with {len(visual_elements)} visual elements, using CV analysis")
+
                 try:
                     result = await self.intelligent_generator.generate_from_visual_analysis(visual_elements, session_id)
-                    
+
                     if result and result.content:
                         generation_time = (datetime.now() - generation_start).total_seconds()
                         self.generation_stats['intelligent_generations'] += 1
                         self._update_avg_generation_time(generation_time)
-                        
+
                         # Enhanced metadata for intelligent generation
                         result.metadata.update({
                             "generation_time": generation_time,
@@ -93,40 +139,44 @@ class MermaidFlowGenerator:
                             "output_length": len(result.content.split('\n')),
                             "session_id": session_id,
                             "created_at": datetime.now().isoformat(),
-                            "success": True
+                            "success": True,
+                            "priority": "cv_analysis"
                         })
-                        
-                        self.logger.info(f"[{session_id}] Intelligent Mermaid generation completed in {generation_time:.2f}s")
+
+                        self.logger.info(f"[{session_id}] CV analysis completed in {generation_time:.2f}s")
                         return result
-                        
+
                 except Exception as e:
-                    self.logger.warning(f"[{session_id}] Intelligent generation failed: {e}, falling back to LLM")
-            
-            # Fallback to LLM-based generation
-            if self.llm_provider and self.api_key:
-                self.logger.debug(f"[{session_id}] Attempting LLM-based Mermaid generation")
-                
-                mermaid_code = await self._generate_mermaid_with_llm(content, direction, context, session_id)
-                
-                if mermaid_code:
-                    self.generation_stats['llm_generations'] += 1
-                    self.logger.info(f"[{session_id}] LLM generation successful")
+                    self.logger.warning(f"[{session_id}] CV analysis failed: {e}, falling back to LLM")
+
+                # Fallback to LLM for images if CV fails
+                if self.ollama_client or (self.llm_provider and self.api_key):
+                    self.logger.info(f"[{session_id}] Trying LLM fallback for image input")
+
+                    mermaid_code = await self._generate_mermaid_with_llm(content, direction, context, session_id)
+
+                    if mermaid_code:
+                        self.generation_stats['llm_generations'] += 1
+                        self.logger.info(f"[{session_id}] LLM fallback successful")
+                    else:
+                        self.logger.warning(f"[{session_id}] LLM fallback failed, using rule-based")
+                        mermaid_code = self._generate_fallback_mermaid(content, direction, context, session_id)
                 else:
-                    self.logger.warning(f"[{session_id}] LLM generation returned empty result, using fallback")
                     mermaid_code = self._generate_fallback_mermaid(content, direction, context, session_id)
+
             else:
-                # Direct fallback generation
-                self.logger.debug(f"[{session_id}] Using fallback Mermaid generation")
+                # No LLM, no CV - direct fallback
+                self.logger.info(f"[{session_id}] No LLM or CV available, using rule-based generation")
                 mermaid_code = self._generate_fallback_mermaid(content, direction, context, session_id)
-            
+
             # Create output file
             generation_time = (datetime.now() - generation_start).total_seconds()
             output_path = self._create_output_file(mermaid_code, session_id)
-            
+
             self._update_avg_generation_time(generation_time)
-            
+
             metadata = {
-                'generation_method': 'llm' if self.llm_provider and self.api_key else 'fallback',
+                'generation_method': 'llm' if self.ollama_client or self.api_key else 'fallback',
                 'generator': 'mermaid_flow_generator',
                 'generation_time': generation_time,
                 'content_length': len(mermaid_code),
@@ -135,21 +185,21 @@ class MermaidFlowGenerator:
                 'created_at': datetime.now().isoformat(),
                 'success': True
             }
-            
+
             return GeneratorOutput(
                 content=mermaid_code,
                 output_type='mermaid',
                 file_path=output_path,
                 metadata=metadata
             )
-            
+
         except Exception as e:
             generation_time = (datetime.now() - generation_start).total_seconds()
             error_msg = f"Mermaid generation failed: {str(e)}"
-            
+
             self.logger.error(f"[{session_id}] {error_msg}")
             self.logger.error(f"[{session_id}] Generation failed after {generation_time:.2f}s")
-            
+
             # Log error details for feedback
             error_metadata = {
                 'error': True,
@@ -159,7 +209,7 @@ class MermaidFlowGenerator:
                 'created_at': datetime.now().isoformat(),
                 'success': False
             }
-            
+
             return GeneratorOutput(
                 content=f"Error: {error_msg}",
                 output_type='error',
@@ -175,17 +225,30 @@ class MermaidFlowGenerator:
             self.logger.info(f"[{session_id}] Generating Mermaid with Ollama")
 
             try:
-                # Check if we have visual elements to work with
+                # Check if we have visual SHAPES (not just text elements)
                 visual_elements = context.get('visual_elements', [])
+                input_type = context.get('input_type', 'text')
 
+                # Only use element-based generation if we have actual visual shapes
+                has_visual_shapes = False
                 if visual_elements:
-                    # Use elements-based generation
+                    # Check if there are shape/arrow elements (not just text)
+                    for elem in visual_elements:
+                        if hasattr(elem, 'element_type'):
+                            if elem.element_type in ['shape', 'arrow', 'connector', 'diagram']:
+                                has_visual_shapes = True
+                                break
+
+                if has_visual_shapes and input_type != 'text':
+                    # Use elements-based generation for images with shapes
+                    self.logger.info(f"[{session_id}] Using element-based generation (detected visual shapes)")
                     mermaid_code = await self.ollama_client.generate_mermaid_from_elements(
                         visual_elements,
                         {'flow_direction': direction}
                     )
                 else:
-                    # Use text-based generation
+                    # Use text-based generation for text input or images without shapes
+                    self.logger.info(f"[{session_id}] Using text-based generation for content understanding")
                     mermaid_code = await self.ollama_client.generate_mermaid_from_text(
                         content,
                         direction
