@@ -403,82 +403,77 @@ flowchart TD
     E --> F
 ```
 
-## 🚧 Roadmap (Core Input Capabilities First)
+## 🚧 Roadmap (Visual-First Strategy)
 
-### Philosophy: Perfect Inputs Before Advanced Outputs
-Focus on getting text and image sketch processing working at high quality before adding generative features.
+### Philosophy: Build Complete Visual Intelligence Pipeline
+Prioritize visual capabilities - both understanding (sketch → flowchart) and generation (text → images) as core features.
 
 1. **Phase 1** ✅: Text → Flowchart Foundation (COMPLETED)
-   - Simple text descriptions to Mermaid flowcharts
+   - Text descriptions to Mermaid flowcharts with LLM
    - Comprehensive logging and fallback systems
    - Status: 100% success rate, production-ready
 
-2. **Phase 2** 🎯: Image Sketch → Flowchart (CURRENT PRIORITY - High Quality Focus)
-   - Direct image/sketch processing (PNG, JPG, PDF)
-   - Enhanced OCR extraction from whiteboard images
-   - Computer vision for diagram element detection (boxes, arrows, connections)
+2. **Phase 2** 🎯: Image Sketch → Flowchart (HIGH PRIORITY - IN PROGRESS)
+   - Direct image/sketch processing (PNG, JPG, PDF, whiteboard photos)
+   - Vision-language model (qwen2.5vl) for understanding hand-drawn diagrams
+   - Computer vision for element detection (boxes, arrows, connections, text)
    - Convert hand-drawn flowcharts to clean Mermaid diagrams
-   - **Quality Goal**: Match Phase 1's reliability and accuracy
-   - Resolve macOS OCR network issues for production readiness
+   - OCR enhancement for text extraction from images
+   - **Goal**: High-quality sketch understanding with 90%+ accuracy
 
-3. **Phase 3** 📊: Multi-Format Flowchart Excellence
+3. **Phase 3** 🎨: AI Image Generation (HIGH PRIORITY - IN PROGRESS)
+   - Text prompt → Generated flowchart/diagram images
+   - Open-source models: Stable Diffusion XL, Flux, LCM
+   - Local inference with Ollama or dedicated image gen servers
+   - Style customization for diagrams and illustrations
+   - Professional presentation-ready visual outputs
+   - **Goal**: Complete "text → visual diagram" generation pipeline
+
+4. **Phase 4** 📊: Multi-Format Diagram Excellence
    - Support multiple diagram types (sequence, class, ER, state machines)
    - Advanced Mermaid layout optimization and styling
    - Export to multiple formats (SVG, PNG, PDF, HTML)
    - Flowchart validation and auto-correction
-   - Enhanced diagram quality and readability
 
-4. **Phase 4** 🔄: Multi-Modal Integration
-   - Combined text + image inputs for better context understanding
-   - Iterative refinement (user feedback → improved diagrams)
+5. **Phase 5** 🔄: Multi-Modal Integration
+   - Combined text + image inputs for better context
+   - Iterative refinement (user feedback → improved outputs)
    - Batch processing for multiple diagrams
-   - Template-based diagram generation
-   - Cross-reference and linking between diagrams
+   - Template-based generation
 
-5. **Phase 5** 🎨: Generative Visual Enhancements
-   - Text → Generated visual diagrams (Stable Diffusion, DALL-E)
-   - Style customization for flowcharts and diagrams
-   - Illustrated process diagrams with custom graphics
-   - Professional presentation-ready outputs
-   - *Note: Moved from Phase 3 - prioritizing input quality first*
-
-6. **Phase 6** ⚡: Production Optimization & Advanced Features
-   - Performance tuning and horizontal scalability
-   - Fine-tune models with collected feedback data
-   - Interactive diagrams (HTML/JS components)
+6. **Phase 6** ⚡: Production Optimization
+   - Performance tuning and scalability
+   - Fine-tune models with collected feedback
    - REST API and web interface
-   - Advanced analytics, monitoring, and A/B testing
-   - Add vLLM support for macOS
+   - Advanced analytics and monitoring
 
 ## 🎯 Next Development Priorities
 
-**Phase 2: Image Sketch → Flowchart (CURRENT PRIORITY)**
+**Phase 2 & 3: Visual Intelligence (CURRENT FOCUS)**
 
-*Goal: Achieve the same high quality and reliability as Phase 1 (100% success rate)*
+### Phase 2: Sketch → Flowchart
+- [ ] Implement image file input handling (PNG, JPG, PDF)
+- [ ] Integrate qwen2.5vl for visual understanding
+- [ ] Add image preprocessing (enhancement, rotation correction)
+- [ ] Computer vision for shape detection
+- [ ] OCR for text extraction from diagrams
+- [ ] Test with real whiteboard sketches
+- [ ] Target: 90%+ accuracy
 
-**Immediate Tasks:**
-- [ ] Fix macOS OCR network connectivity issues (PaddleOCR + EasyOCR)
-- [ ] Implement direct image file processing pipeline (PNG, JPG, PDF)
-- [ ] Add preprocessing: image enhancement, noise reduction, rotation correction
-- [ ] Integrate computer vision for flowchart element detection:
-  - [ ] Detect boxes, circles, diamonds (flowchart shapes)
-  - [ ] Identify arrows and connection lines
-  - [ ] Recognize text within shapes
-  - [ ] Map relationships between elements
-
-**Quality & Testing:**
-- [ ] Create test suite with real whiteboard sketch samples
-- [ ] Benchmark accuracy against hand-drawn flowcharts
-- [ ] Implement confidence scoring for diagram quality
-- [ ] Add validation for generated Mermaid syntax
-- [ ] Target: 90%+ accuracy on clean whiteboard images
+### Phase 3: AI Image Generation
+- [ ] Research & select open-source image generation models
+- [ ] Set up Stable Diffusion XL / Flux locally
+- [ ] Implement text-to-image generation pipeline
+- [ ] Create diagram-specific prompt templates
+- [ ] Style customization for flowcharts
+- [ ] Quality validation and post-processing
+- [ ] Integration with existing pipeline
 
 **Success Criteria:**
-- OCR extraction working reliably on macOS and Linux
-- Accurate detection of flowchart shapes and connections
-- Clean Mermaid output from hand-drawn sketches
-- Comprehensive test coverage with real-world examples
-- Performance within acceptable limits (< 5s per image)
+- Process whiteboard photos → clean Mermaid flowcharts
+- Generate professional diagram images from text prompts
+- Fast performance (< 10s per operation)
+- High quality visual outputs
 
 ## 🔧 Key Technical Decisions & Current Status
 
