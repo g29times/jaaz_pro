@@ -195,21 +195,78 @@ All examples use **LLM as PRIMARY method** for understanding requirements and ge
 
 ## ⚙️ Production Setup
 
-### LLM Backend Options
+### 🚨 NEW: Google AI Stack (PRIMARY)
 
-The pipeline supports multiple LLM backends with different trade-offs:
+**Updated**: 2025-01-20
+
+The pipeline now uses Google's AI ecosystem as the PRIMARY provider:
+
+| Component | Provider | Purpose | Status |
+|-----------|----------|---------|--------|
+| **LLM** | Google Gemini | Text → Mermaid generation | ⭐ PRIMARY |
+| **Vision** | Gemini Vision | Image understanding | ⭐ PRIMARY |
+| **Image Gen** | Google Imagen | Text → Image generation | ⭐ PRIMARY |
+| **Fallback LLM** | Ollama (local) | Offline/development | 🔄 FALLBACK |
+
+### LLM Backend Options (Updated)
 
 | Backend | Quality | Cost | Speed | Setup | Use Case |
 |---------|---------|------|-------|-------|----------|
-| **Ollama Cloud** ⭐ | ⭐⭐⭐⭐⭐ | $ | Medium | Easy | **Recommended** - Best balance |
-| Ollama Local | ⭐⭐⭐ | Free | Fast | Easy | Development, offline |
-| OpenAI API | ⭐⭐⭐⭐⭐ | $$$ | Fast | Easy | Production with budget |
+| **Google Gemini** ⭐ | ⭐⭐⭐⭐⭐ | $ | Fast | Easy | **PRIMARY** - Production |
+| Ollama Local | ⭐⭐⭐ | Free | Fast | Easy | Fallback, offline development |
 
-1. **Ollama Cloud (qwen3-vl:235b)** - Recommended for quality + cost balance
-2. **Ollama Local** - For development and offline use
-3. **OpenAI API** - For maximum quality with higher budget
+---
 
-#### Option 1: Ollama (Local & Cloud Models - Recommended)
+### Option 1: Google Gemini (PRIMARY - Recommended)
+
+Google Gemini is now the primary LLM provider for high-quality Mermaid generation.
+
+**Features:**
+- ✅ Multimodal (text + vision)
+- ✅ High-quality text generation
+- ✅ Vision capabilities for Phase 2
+- ✅ Fast inference
+- ✅ Easy API integration
+
+**Setup:**
+
+1. **Get Gemini API Key:**
+   - Visit: https://ai.google.dev/gemini-api/docs
+   - Create an API key
+   - Free tier available with rate limits
+
+2. **Add API key to config.json:**
+```json
+{
+    "mermaid_generator": {
+        "llm_provider": "gemini",
+        "gemini_api_key": "YOUR_GEMINI_API_KEY_HERE",
+        "gemini_model": "gemini-1.5-flash"
+    }
+}
+```
+
+3. **Install dependencies:**
+```bash
+pip install google-generativeai
+```
+
+4. **Test the integration:**
+```bash
+python test_gemini_integration.py
+```
+
+**Models:**
+- `gemini-1.5-flash` (default) - Fast, cost-effective
+- `gemini-1.5-pro` - Higher quality, slower
+
+**Pricing:**
+- Free tier: 15 requests/minute, 1 million tokens/day
+- Paid: ~$0.00025 per 1K characters (very affordable)
+
+---
+
+### Option 2: Ollama (FALLBACK - For Offline/Development)
 
 Ollama supports both local models and cloud-based large models through a unified interface.
 
@@ -306,27 +363,55 @@ python test_ollama_integration.py
 
 **Note for Claude Code users:** You may need to allow network access through the Claude Code dashboard at http://localhost:4564 (Tools tab).
 
-#### Option 2: OpenAI API (Production)
+---
 
-**Environment Variables (Required)**
+### Option 3: Google Imagen (Image Generation)
 
+Google Imagen is used for text-to-image generation (Phase 3).
+
+**Features:**
+- ✅ State-of-the-art image generation quality
+- ✅ Excellent prompt following for diagrams
+- ✅ Cloud-based (no GPU required)
+- ✅ Official Google Cloud integration
+
+**Setup:**
+
+1. **Set up Google Cloud Project:**
+   - Create project at: https://console.cloud.google.com/
+   - Enable Vertex AI API
+   - Create service account and download credentials JSON
+
+2. **Install dependencies:**
 ```bash
-export OPENAI_API_KEY="your-openai-api-key"
-# Optional: ANTHROPIC_API_KEY for Claude fallback
+pip install google-cloud-aiplatform
 ```
 
-**Configuration (config.json):**
+3. **Configure authentication:**
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account-key.json"
+```
+
+4. **Add to config.json:**
 ```json
 {
-    "mermaid_generator": {
-        "llm_provider": "openai",
-        "api_key": "${OPENAI_API_KEY}",
-        "model_name": "gpt-4",
-        "temperature": 0.3,
-        "fallback_enabled": true
+    "image_generator": {
+        "provider": "imagen",
+        "google_cloud_project_id": "YOUR_PROJECT_ID",
+        "google_cloud_location": "us-central1",
+        "imagen_model_version": "imagegeneration@006"
     }
 }
 ```
+
+**Pricing:**
+- ~$0.020 per image (512x512)
+- ~$0.040 per image (1024x1024)
+- See: https://cloud.google.com/vertex-ai/pricing
+
+**Note:** This is optional for Phase 3 (image generation). Not required for text-to-Mermaid functionality.
+
+---
 
 ### Platform-Specific Setup
 

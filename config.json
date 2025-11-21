@@ -17,12 +17,24 @@
         "fallback_enabled": true
     },
     "mermaid_generator": {
-        "llm_provider": "ollama",
+        "llm_provider": "gemini",
+        "gemini_api_key": "YOUR_GEMINI_API_KEY_HERE",
+        "gemini_model": "gemini-2.5-flash",
         "ollama_url": "http://localhost:11434",
         "ollama_model": "qwen2.5vl:latest",
         "temperature": 0.3,
-        "timeout": 60,
+        "timeout": 120,
         "fallback_enabled": true,
         "use_intelligent_analysis": true
+    },
+    "image_generator": {
+        "provider": "imagen",
+        "google_cloud_project_id": "YOUR_GOOGLE_CLOUD_PROJECT_ID",
+        "google_cloud_location": "us-central1",
+        "imagen_model_version": "imagegeneration@006",
+        "number_of_images": 1,
+        "guidance_scale": 15,
+        "add_watermark": false,
+        "default_style": "professional diagram"
     }
 }

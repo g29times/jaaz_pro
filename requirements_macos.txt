@@ -23,5 +23,11 @@ pytest-cov>=4.0.0
 # Structured logging for feedback
 structlog>=22.3.0
 
+# Google AI Integration (PRIMARY LLM provider)
+google-genai>=0.1.0  # New unified Google GenAI SDK (Gemini API)
+
+# Google Cloud AI (OPTIONAL - for Phase 3 image generation)
+# google-cloud-aiplatform>=1.38.0  # Uncomment to enable Imagen image generation
+
 # Note: vLLM has build issues on macOS - will use OpenAI API directly for now
 # vllm>=0.2.0  # Uncomment for Linux/GPU systems

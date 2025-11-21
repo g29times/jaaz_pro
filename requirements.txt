@@ -25,3 +25,9 @@ pytest-cov>=4.0.0
 
 # Development and feedback collection
 structlog>=22.3.0  # Better structured logging
+
+# Google AI Integration (PRIMARY LLM provider)
+google-genai>=0.1.0  # New unified Google GenAI SDK (Gemini API)
+
+# Google Cloud AI (OPTIONAL - for Phase 3 image generation)
+# google-cloud-aiplatform>=1.38.0  # Uncomment to enable Imagen image generation

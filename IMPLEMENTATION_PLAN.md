@@ -1,16 +1,34 @@
 # Phase 2 & 3 Implementation Plan
 
+## 🚨 UPDATED ARCHITECTURE: Google AI Stack
+
+**Date**: 2025-01-20
+**Status**: In Progress
+
+### New Technology Stack
+- **Primary LLM**: Google Gemini (gemini-1.5-flash / gemini-1.5-pro)
+- **Fallback LLM**: Ollama (qwen2.5vl:latest) - local
+- **Image Generation**: Google Imagen (via Vertex AI)
+- **Vision Understanding**: Gemini Vision API
+
+### Architecture Decision
+- Use Google's AI ecosystem as PRIMARY
+- Keep Ollama as FALLBACK for offline/development
+- Centralized configuration with API key placeholders
+
+---
+
 ## Overview
 
 Building two high-priority visual features in parallel:
-- **Phase 2**: Sketch → Flowchart (Understanding)
-- **Phase 3**: Text → Image (Generation)
+- **Phase 2**: Sketch → Flowchart (Understanding) - Using Gemini Vision
+- **Phase 3**: Text → Image (Generation) - Using Google Imagen
 
 ---
 
 ## Phase 2: Sketch → Flowchart Implementation
 
-### Architecture
+### Updated Architecture
 
 ```
 Whiteboard Photo/Sketch (PNG/JPG/PDF)
@@ -21,10 +39,12 @@ Image Preprocessing
 ├─ Contrast enhancement
 └─ Resize/normalize
     ↓
-Vision-Language Model (qwen2.5vl)
+Google Gemini Vision API ⭐ (PRIMARY)
 ├─ Understand diagram structure
 ├─ Identify shapes and connections
 └─ Extract text from elements
+    ↓ (fallback)
+qwen2.5vl via Ollama (LOCAL FALLBACK)
     ↓
 Mermaid Code Generation
     ↓
@@ -42,11 +62,21 @@ class ImageInputHandler:
     def enhance_contrast(self, image: Image) -> Image
 ```
 
-**2. Vision Analyzer**
+**2. Vision Analyzer (Updated)**
 ```python
 class VisionAnalyzer:
-    def __init__(self, model="qwen2.5vl"):
-        self.vlm = load_vision_model(model)
+    def __init__(self):
+        self.gemini_client = GeminiClient(config)  # PRIMARY
+        self.ollama_client = OllamaClient(config)  # FALLBACK
+
+    async def analyze_sketch(self, image: Image) -> SketchAnalysis:
+        # Try Gemini Vision first
+        try:
+            return await self.gemini_client.analyze_image(image)
+        except:
+            # Fallback to local qwen2.5vl
+            return await self.ollama_client.analyze_image(image)
+```
 
     async def analyze_sketch(self, image: Image) -> SketchAnalysis:
         # Use VLM to understand the sketch
@@ -73,11 +103,12 @@ if input_type == InputType.IMAGE:
     mermaid = await mermaid_generator.generate_from_elements(elements)
 ```
 
-### Tasks
+### Tasks (Updated)
 
 - [ ] Create `ImageInputHandler` component
 - [ ] Implement image preprocessing pipeline
-- [ ] Integrate qwen2.5vl for visual understanding
+- [x] Integrate Gemini Vision for visual understanding (PRIMARY)
+- [ ] Keep qwen2.5vl as fallback for offline use
 - [ ] Create prompt templates for diagram analysis
 - [ ] Parse VLM output into structured format
 - [ ] Update pipeline to handle IMAGE input type
@@ -86,9 +117,9 @@ if input_type == InputType.IMAGE:
 
 ---
 
-## Phase 3: Text → Image Generation
+## Phase 3: Text → Image Generation (UPDATED)
 
-### Architecture
+### Updated Architecture (Google Imagen)
 
 ```
 Text Description
@@ -96,12 +127,12 @@ Text Description
 Diagram Prompt Builder
 ├─ Add diagram-specific keywords
 ├─ Specify visual style
-└─ Add negative prompts
+└─ Optimize for Imagen model
     ↓
-Stable Diffusion XL Turbo
-├─ Local inference (GPU/MPS)
-├─ 4-8 generation steps
-└─ Fast turbo variant
+Google Imagen (Vertex AI) ⭐ (PRIMARY)
+├─ Cloud-based inference
+├─ High-quality image generation
+└─ ~$0.02 per image
     ↓
 Post-Processing
 ├─ Resize if needed
@@ -111,83 +142,67 @@ Post-Processing
 Generated Image (PNG)
 ```
 
-### Components
+**Key Change**: Using Google Imagen instead of local Stable Diffusion
+- **Pros**: Better quality, no GPU requirements, official Google solution
+- **Cons**: Requires Google Cloud setup, pay-per-use
 
-**1. Image Generator**
+### Components (Updated)
+
+**1. Image Generator (ImagenClient)**
 ```python
-from diffusers import DiffusionPipeline
-import torch
+from whiteboard_pipeline.components.imagen_client import ImagenClient
 
 class DiagramImageGenerator:
-    def __init__(self, model="sdxl-turbo"):
-        self.pipe = self._load_model(model)
-
-    def _load_model(self, model_name):
-        pipe = DiffusionPipeline.from_pretrained(
-            f"stabilityai/{model_name}",
-            torch_dtype=torch.float16,
-            variant="fp16"
-        )
-        # Use GPU if available
-        if torch.cuda.is_available():
-            pipe = pipe.to("cuda")
-        elif torch.backends.mps.is_available():
-            pipe = pipe.to("mps")
-        return pipe
+    def __init__(self, config):
+        self.imagen_client = ImagenClient(config)
 
     async def generate(self, description: str) -> Image:
-        prompt = self._build_diagram_prompt(description)
-        negative = self._get_negative_prompt()
-
-        image = self.pipe(
-            prompt=prompt,
-            negative_prompt=negative,
-            num_inference_steps=4,
-            guidance_scale=0.0
-        ).images[0]
-
+        """Generate diagram image using Google Imagen"""
+        image = await self.imagen_client.generate_diagram_image(
+            description=description,
+            style="professional diagram"
+        )
         return image
 
-    def _build_diagram_prompt(self, description: str) -> str:
-        return f"""professional flowchart diagram, {description},
-        clean lines, simple shapes, white background,
-        technical illustration, vector art style,
-        minimalist design, high contrast, clear labels"""
+    async def generate_from_mermaid(self, mermaid_code: str) -> Image:
+        """Generate visual image from Mermaid code"""
+        return await self.imagen_client.generate_from_mermaid(mermaid_code)
 
-    def _get_negative_prompt(self) -> str:
-        return """photo, photograph, realistic, 3d render,
-        cluttered, messy, handwriting, blurry, low quality"""
 ```
 
-**2. Integration**
+**2. Integration (Updated)**
 ```python
 # Add to pipeline
 class VisualPipeline:
     def __init__(self, config):
-        self.text_to_mermaid = TextToMermaid(config)
-        self.sketch_to_mermaid = SketchToMermaid(config)
-        self.image_generator = DiagramImageGenerator(config)
+        self.gemini_client = GeminiClient(config)  # Text → Mermaid
+        self.imagen_client = ImagenClient(config)  # Text → Image
 
     async def process(self, input_data):
         if input_data.type == "text" and input_data.want_image:
-            # Generate Mermaid
-            mermaid = await self.text_to_mermaid.generate(input_data)
+            # Generate Mermaid flowchart code
+            mermaid = await self.gemini_client.generate_mermaid_from_text(
+                input_data.content
+            )
 
-            # Generate visual image
-            image = await self.image_generator.generate(input_data.content)
+            # Generate visual image from the same description
+            image = await self.imagen_client.generate_diagram_image(
+                input_data.content
+            )
 
             return {"mermaid": mermaid, "image": image}
 ```
 
-### Tasks
+### Tasks (Updated)
 
-- [ ] Install diffusers and dependencies
-- [ ] Create `DiagramImageGenerator` component
-- [ ] Test basic image generation
-- [ ] Create diagram-specific prompt templates
-- [ ] Implement post-processing pipeline
-- [ ] Add GPU/CPU fallback handling
+- [x] Research Google Imagen API
+- [x] Create `ImagenClient` component
+- [ ] Set up Google Cloud project and credentials
+- [ ] Install google-cloud-aiplatform dependencies
+- [ ] Test basic image generation with Imagen
+- [ ] Create diagram-specific prompt templates for Imagen
 - [ ] Integrate with main pipeline
+- [ ] Test end-to-end text → image workflow
 - [ ] Test with real diagram descriptions
 - [ ] Benchmark generation speed and quality
 

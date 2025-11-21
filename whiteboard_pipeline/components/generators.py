@@ -25,18 +25,31 @@ class MermaidFlowGenerator:
         self.use_intelligent_analysis = config.get('use_intelligent_analysis', True)
 
         # LLM configuration
-        self.llm_provider = config.get('llm_provider', 'ollama')  # Default to Ollama
+        self.llm_provider = config.get('llm_provider', 'gemini')  # Default to Gemini
         self.api_key = config.get('api_key')
 
-        # Initialize Ollama client for local LLM
-        self.ollama_client = None
-        if self.llm_provider == 'ollama':
+        # Initialize Gemini client as PRIMARY LLM
+        self.gemini_client = None
+        if self.llm_provider == 'gemini':
             try:
-                from .ollama_client import OllamaClient
-                self.ollama_client = OllamaClient(config)
-                self.logger.info("Ollama client initialized for local LLM")
+                from .gemini_client import GeminiClient
+                self.gemini_client = GeminiClient(config)
+                self.logger.info("Gemini client initialized as primary LLM provider")
             except ImportError as e:
-                self.logger.warning(f"Ollama client not available: {e}")
+                self.logger.warning(f"Gemini client not available: {e}")
+            except Exception as e:
+                self.logger.warning(f"Gemini client initialization failed: {e}")
+
+        # Initialize Ollama client as FALLBACK LLM
+        self.ollama_client = None
+        try:
+            from .ollama_client import OllamaClient
+            self.ollama_client = OllamaClient(config)
+            self.logger.info("Ollama client initialized as fallback LLM provider")
+        except ImportError as e:
+            self.logger.warning(f"Ollama client not available: {e}")
+        except Exception as e:
+            self.logger.warning(f"Ollama client initialization failed: {e}")
 
         # Initialize intelligent generator
         self.intelligent_generator = None
@@ -81,8 +94,8 @@ class MermaidFlowGenerator:
             if input_type == 'text' or not visual_elements:
                 self.logger.info(f"[{session_id}] Text input detected, using LLM as primary method")
 
-                # Try LLM first for text understanding
-                if self.ollama_client or (self.llm_provider and self.api_key):
+                # Try LLM first for text understanding (Gemini → Ollama fallback)
+                if self.gemini_client or self.ollama_client or (self.llm_provider and self.api_key):
                     self.logger.info(f"[{session_id}] Generating Mermaid with LLM (primary method)")
 
                     mermaid_code = await self._generate_mermaid_with_llm(content, direction, context, session_id)
@@ -96,14 +109,17 @@ class MermaidFlowGenerator:
 
                         self.logger.info(f"[{session_id}] LLM generation successful in {generation_time:.2f}s")
 
+                        # Determine which provider was used
+                        provider = 'gemini' if self.gemini_client else ('ollama' if self.ollama_client else 'openai')
+
                         return GeneratorOutput(
                             content=mermaid_code,
                             output_type='mermaid',
                             file_path=output_path,
                             metadata={
                                 'generation_method': 'llm',
-                                'generator': 'ollama' if self.ollama_client else 'openai',
-                                'model': self.config.get('ollama_model', 'unknown'),
+                                'generator': provider,
+                                'model': self.config.get('gemini_model' if provider == 'gemini' else 'ollama_model', 'unknown'),
                                 'generation_time': generation_time,
                                 'content_length': len(mermaid_code),
                                 'output_length': len(mermaid_code.split('\n')),
@@ -150,7 +166,7 @@ class MermaidFlowGenerator:
                     self.logger.warning(f"[{session_id}] CV analysis failed: {e}, falling back to LLM")
 
                 # Fallback to LLM for images if CV fails
-                if self.ollama_client or (self.llm_provider and self.api_key):
+                if self.gemini_client or self.ollama_client or (self.llm_provider and self.api_key):
                     self.logger.info(f"[{session_id}] Trying LLM fallback for image input")
 
                     mermaid_code = await self._generate_mermaid_with_llm(content, direction, context, session_id)
@@ -218,37 +234,64 @@ class MermaidFlowGenerator:
             )
     
     async def _generate_mermaid_with_llm(self, content: str, direction: str, context: Dict[str, Any], session_id: str) -> Optional[str]:
-        """Generate Mermaid code using LLM (Ollama or OpenAI)"""
+        """Generate Mermaid code using LLM (Gemini primary → Ollama fallback)"""
 
-        # Try Ollama first if configured
-        if self.llm_provider == 'ollama' and self.ollama_client:
-            self.logger.info(f"[{session_id}] Generating Mermaid with Ollama")
+        visual_elements = context.get('visual_elements', [])
+        input_type = context.get('input_type', 'text')
+
+        # Determine if we have actual visual shapes (not just text elements)
+        has_visual_shapes = False
+        if visual_elements:
+            for elem in visual_elements:
+                if hasattr(elem, 'element_type'):
+                    if elem.element_type in ['shape', 'arrow', 'connector', 'diagram']:
+                        has_visual_shapes = True
+                        break
+
+        # Try Gemini first (PRIMARY provider)
+        if self.gemini_client:
+            self.logger.info(f"[{session_id}] Generating Mermaid with Gemini (primary)")
 
             try:
-                # Check if we have visual SHAPES (not just text elements)
-                visual_elements = context.get('visual_elements', [])
-                input_type = context.get('input_type', 'text')
-
-                # Only use element-based generation if we have actual visual shapes
-                has_visual_shapes = False
-                if visual_elements:
-                    # Check if there are shape/arrow elements (not just text)
-                    for elem in visual_elements:
-                        if hasattr(elem, 'element_type'):
-                            if elem.element_type in ['shape', 'arrow', 'connector', 'diagram']:
-                                has_visual_shapes = True
-                                break
-
                 if has_visual_shapes and input_type != 'text':
                     # Use elements-based generation for images with shapes
-                    self.logger.info(f"[{session_id}] Using element-based generation (detected visual shapes)")
+                    self.logger.info(f"[{session_id}] Using Gemini element-based generation")
+                    mermaid_code = await self.gemini_client.generate_mermaid_from_elements(
+                        visual_elements,
+                        {'flow_direction': direction}
+                    )
+                else:
+                    # Use text-based generation for text input
+                    self.logger.info(f"[{session_id}] Using Gemini text-based generation")
+                    mermaid_code = await self.gemini_client.generate_mermaid_from_text(
+                        content,
+                        direction
+                    )
+
+                if mermaid_code:
+                    self.logger.info(f"[{session_id}] Gemini generation successful")
+                    return mermaid_code
+                else:
+                    self.logger.warning(f"[{session_id}] Gemini returned empty result, falling back to Ollama")
+
+            except Exception as e:
+                self.logger.warning(f"[{session_id}] Gemini generation failed: {e}, falling back to Ollama")
+
+        # Fallback to Ollama if Gemini fails or unavailable
+        if self.ollama_client:
+            self.logger.info(f"[{session_id}] Generating Mermaid with Ollama (fallback)")
+
+            try:
+                if has_visual_shapes and input_type != 'text':
+                    # Use elements-based generation for images with shapes
+                    self.logger.info(f"[{session_id}] Using Ollama element-based generation")
                     mermaid_code = await self.ollama_client.generate_mermaid_from_elements(
                         visual_elements,
                         {'flow_direction': direction}
                     )
                 else:
-                    # Use text-based generation for text input or images without shapes
-                    self.logger.info(f"[{session_id}] Using text-based generation for content understanding")
+                    # Use text-based generation for text input
+                    self.logger.info(f"[{session_id}] Using Ollama text-based generation")
                     mermaid_code = await self.ollama_client.generate_mermaid_from_text(
                         content,
                         direction
@@ -262,10 +305,6 @@ class MermaidFlowGenerator:
 
             except Exception as e:
                 self.logger.warning(f"[{session_id}] Ollama generation failed: {e}")
-
-        # TODO: Add OpenAI API fallback here for production
-        # if self.llm_provider == 'openai' and self.api_key:
-        #     return await self._generate_with_openai(content, direction, context)
 
         return None
     
