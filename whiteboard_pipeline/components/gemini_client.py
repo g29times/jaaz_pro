@@ -271,3 +271,71 @@ Now generate the flowchart:"""
             result = self._extract_mermaid_code(result)
 
         return result
+
+    async def generate_image_from_text(self, prompt: str, aspect_ratio: str = "1:1") -> Optional[bytes]:
+        """
+        Generate image from text prompt using Gemini's native image generation capability
+
+        Args:
+            prompt: Text description of the image to generate
+            aspect_ratio: Image aspect ratio ("1:1", "16:9", "9:16", "4:3", "3:4", "2:3", "3:2", etc.)
+
+        Returns:
+            Image bytes (PNG format) or None if generation fails
+        """
+        self.logger.info(f"Generating image with Gemini (aspect ratio: {aspect_ratio})")
+
+        try:
+            # Use Gemini 2.5 Flash Image model for native image generation
+            config = types.GenerateContentConfig(
+                temperature=1.0,  # Higher temperature for creative image generation
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio
+                )
+            )
+
+            # Generate image using Gemini 2.5 Flash Image
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model="gemini-2.5-flash-image",  # Native image generation model
+                contents=prompt,
+                config=config
+            )
+
+            # Extract image from response parts
+            if response and hasattr(response, 'parts'):
+                for part in response.parts:
+                    if hasattr(part, 'inline_data') and part.inline_data:
+                        # Return the image bytes directly
+                        self.logger.info("Image generated successfully")
+                        return part.inline_data.data
+
+            self.logger.warning("No image data found in response")
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Image generation failed: {e}")
+            return None
+
+    async def generate_diagram_image(self, description: str, style: str = "professional flowchart diagram") -> Optional[bytes]:
+        """
+        Generate diagram/flowchart image from description using Gemini
+
+        Args:
+            description: Description of the diagram/flowchart
+            style: Visual style for the diagram
+
+        Returns:
+            Image bytes or None if generation fails
+        """
+        prompt = f"""Create a {style}: {description}
+
+Style requirements:
+- Clean, professional appearance
+- Clear shapes and connections
+- Readable text labels
+- White or light background
+- Technical illustration style
+- High contrast for clarity"""
+
+        return await self.generate_image_from_text(prompt)

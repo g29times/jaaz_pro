@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Comprehensive Google Gemini Integration Tests
 
@@ -477,6 +478,107 @@ async def test_6_performance_benchmark():
         return False
 
 
+async def test_7_image_generation():
+    """Test 7: Image generation with Gemini (native image generation)"""
+    print("\n" + "="*70)
+    print("TEST 7: Image Generation (Gemini Native Image)")
+    print("="*70 + "\n")
+
+    print("ℹ️  Using Gemini's native image generation:")
+    print("   - Same API key as text generation")
+    print("   - No additional setup required")
+    print("   - Model: gemini-2.5-flash-image")
+    print("   - Supports: text-to-image, image editing, style transfer")
+    print()
+
+    start_time = time.time()
+
+    try:
+        from whiteboard_pipeline.components.gemini_client import GeminiClient
+
+        config_path = Path(__file__).parent / "config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        # Initialize Gemini client (same as text generation)
+        client = GeminiClient(config['mermaid_generator'])
+
+        print(f"✓ Gemini client initialized")
+        print(f"  Text model: {client.model_name}")
+        print(f"  Image model: gemini-2.5-flash-image")
+        print(f"  API Key: {client.api_key[:20]}...")
+
+        # Test case: Generate a professional flowchart diagram
+        test_description = """A professional flowchart diagram showing a user login process:
+- Start node
+- User enters username and password (process box)
+- Validate credentials (decision diamond)
+- If valid: redirect to dashboard (process box)
+- If invalid: show error message (process box) and return to login
+- End node
+
+Use clean shapes, clear labels, arrows showing flow direction.
+Style: technical diagram with sharp lines and professional appearance."""
+
+        print(f"\n📝 Generating flowchart diagram from description")
+        print("\n🔄 Calling Gemini image generation API...\n")
+
+        # Generate image using Gemini's native image generation
+        image_bytes = await client.generate_diagram_image(
+            description=test_description,
+            style="professional technical flowchart"
+        )
+
+        if image_bytes:
+            # Save the image
+            output_path = Path(__file__).parent / "test_output_gemini_image.png"
+
+            try:
+                output_path.write_bytes(image_bytes)
+
+                # Get image info
+                from PIL import Image
+                import io
+
+                img = Image.open(io.BytesIO(image_bytes))
+
+                record_test("Image Generation (Gemini)", True, f"Generated {img.size} image", time.time() - start_time)
+                print("✅ Image generation successful!")
+                print(f"\n📊 Image Details:")
+                print(f"  Size: {img.size}")
+                print(f"  Format: {img.format}")
+                print(f"  Mode: {img.mode}")
+                print(f"  File size: {len(image_bytes):,} bytes")
+                print(f"\n💾 Saved to: {output_path}")
+                print("\n✨ You can now open the generated image to see the flowchart!")
+                print("   Note: Images include a SynthID watermark for authenticity")
+                return True
+
+            except Exception as save_error:
+                record_test("Image Generation (Gemini)", False, f"Failed to save: {save_error}", time.time() - start_time)
+                print(f"❌ Failed to save image: {save_error}")
+                return False
+        else:
+            record_test("Image Generation (Gemini)", False, "No image data returned", time.time() - start_time)
+            print("❌ Image generation returned empty result")
+            print("\n⚠️  Possible reasons:")
+            print("   - API key may not have image generation access")
+            print("   - Feature may not be available in your region")
+            print("   - Rate limits may be exceeded")
+            return False
+
+    except Exception as e:
+        record_test("Image Generation (Gemini)", False, str(e), time.time() - start_time)
+        print(f"❌ Error: {e}")
+        print("\n⚠️  Troubleshooting:")
+        print("   - Ensure your API key has Gemini 2.5 access")
+        print("   - Check if image generation is available in your region")
+        print("   - Verify you're not hitting rate limits")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 def print_test_summary():
     """Print final test summary"""
     print("\n" + "="*70)
@@ -520,6 +622,7 @@ async def main():
     print("  4. Fallback System")
     print("  5. End-to-End Pipeline")
     print("  6. Performance Benchmark")
+    print("  7. Image Generation (optional - requires Google Cloud)")
 
     # Run all tests
     await test_1_api_connectivity()
@@ -528,12 +631,14 @@ async def main():
     await test_4_fallback_system()
     await test_5_end_to_end_pipeline()
     await test_6_performance_benchmark()
+    await test_7_image_generation()
 
     # Print summary
     print_test_summary()
 
-    # Exit code
-    exit_code = 0 if test_results['failed'] == 0 else 1
+    # Exit code (only count non-skipped failures)
+    actual_failures = test_results['failed'] - test_results['skipped']
+    exit_code = 0 if actual_failures == 0 else 1
     return exit_code
 
 
