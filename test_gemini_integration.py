@@ -1,15 +1,18 @@
 """
-Test Google Gemini Integration
+Comprehensive Google Gemini Integration Tests
 
-This script tests the Gemini client integration for text-to-Mermaid generation.
-Before running, make sure to:
-1. Add your Gemini API key to config.json
-2. Install google-generativeai: pip install google-generativeai
+Tests all current capabilities of the Google GenAI integration:
+- API connectivity and authentication
+- Text-to-Mermaid generation (simple & complex)
+- Fallback system (Gemini → Ollama)
+- End-to-end pipeline integration
+- Performance benchmarking
 """
 
 import asyncio
 import json
 import logging
+import time
 from pathlib import Path
 
 # Set up logging
@@ -18,11 +21,44 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-async def test_gemini_health():
-    """Test if Gemini client can be initialized"""
-    print("\n" + "="*60)
-    print("TEST 1: Gemini Client Health Check")
-    print("="*60 + "\n")
+# Test results tracker
+test_results = {
+    'total': 0,
+    'passed': 0,
+    'failed': 0,
+    'skipped': 0,
+    'tests': []
+}
+
+def record_test(name: str, passed: bool, message: str = "", duration: float = 0.0):
+    """Record test result"""
+    test_results['total'] += 1
+    if passed:
+        test_results['passed'] += 1
+        status = "✅ PASS"
+    else:
+        test_results['failed'] += 1
+        status = "❌ FAIL"
+
+    test_results['tests'].append({
+        'name': name,
+        'status': status,
+        'message': message,
+        'duration': duration
+    })
+
+    print(f"{status} - {name} ({duration:.2f}s)")
+    if message:
+        print(f"       {message}")
+
+
+async def test_1_api_connectivity():
+    """Test 1: Verify Gemini API connectivity and authentication"""
+    print("\n" + "="*70)
+    print("TEST 1: API Connectivity & Authentication")
+    print("="*70 + "\n")
+
+    start_time = time.time()
 
     try:
         from whiteboard_pipeline.components.gemini_client import GeminiClient
@@ -34,210 +70,473 @@ async def test_gemini_health():
 
         mermaid_config = config['mermaid_generator']
 
-        # Check if API key is set
+        # Check if API key is configured
         api_key = mermaid_config.get('gemini_api_key', '')
-        if api_key == 'YOUR_GEMINI_API_KEY_HERE':
-            print("⚠️  Gemini API key not configured!")
-            print("   Please add your API key to config.json")
-            print("   Get your key from: https://ai.google.dev/gemini-api/docs")
+        if not api_key or api_key == 'YOUR_GEMINI_API_KEY_HERE':
+            record_test("API Key Configuration", False, "API key not configured in config.json", time.time() - start_time)
             return False
 
         # Initialize client
         client = GeminiClient(mermaid_config)
-        print(f"✅ Gemini client initialized")
-        print(f"   Model: {client.model_name}")
+        print(f"✓ Gemini client initialized")
+        print(f"  Model: {client.model_name}")
+        print(f"  API Key: {api_key[:20]}...")
 
         # Health check
         health = await client.check_health()
-        print(f"\n📊 Health Check Results:")
-        print(f"   Status: {health['status']}")
-        print(f"   API Accessible: {health.get('api_accessible', False)}")
 
         if health['status'] == 'healthy':
-            print("\n✅ Gemini is ready to use!")
+            record_test("API Connectivity", True, f"Connected to {health.get('model', 'unknown')}", time.time() - start_time)
+            print(f"\n✅ API is accessible and working!")
             return True
         else:
-            print(f"\n❌ Health check failed: {health.get('error', 'Unknown error')}")
+            error_msg = health.get('error', 'Unknown error')
+            record_test("API Connectivity", False, error_msg, time.time() - start_time)
+            print(f"\n❌ Health check failed: {error_msg}")
             return False
 
-    except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("   Install required package: pip install google-generativeai")
-        return False
     except Exception as e:
+        record_test("API Connectivity", False, str(e), time.time() - start_time)
         print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
-async def test_text_to_mermaid():
-    """Test text-to-Mermaid generation with Gemini"""
-    print("\n" + "="*60)
-    print("TEST 2: Text → Mermaid Generation")
-    print("="*60 + "\n")
+async def test_2_simple_text_to_mermaid():
+    """Test 2: Simple text-to-Mermaid generation"""
+    print("\n" + "="*70)
+    print("TEST 2: Simple Text-to-Mermaid Generation")
+    print("="*70 + "\n")
+
+    start_time = time.time()
 
     try:
         from whiteboard_pipeline.components.gemini_client import GeminiClient
 
-        # Load config
         config_path = Path(__file__).parent / "config.json"
         with open(config_path) as f:
             config = json.load(f)
 
-        mermaid_config = config['mermaid_generator']
+        client = GeminiClient(config['mermaid_generator'])
 
-        # Initialize client
-        client = GeminiClient(mermaid_config)
+        # Simple test case
+        test_description = "Simple workflow: Start, Process, End"
 
-        # Test prompt
-        test_description = """
-        Create a flowchart for a user login process:
-        1. User enters credentials
-        2. System validates credentials
-        3. If valid, redirect to dashboard
-        4. If invalid, show error message
-        """
+        print("📝 Input:")
+        print(f"   {test_description}")
+        print("\n🔄 Generating Mermaid code...\n")
 
-        print("📝 Input Description:")
-        print(test_description)
-        print("\n🔄 Generating Mermaid code with Gemini...\n")
-
-        # Generate Mermaid
+        # Generate
         mermaid_code = await client.generate_mermaid_from_text(
             test_description,
             flow_direction="TD"
         )
 
         if mermaid_code:
-            print("✅ Mermaid Generation Successful!")
-            print("\n📄 Generated Mermaid Code:")
-            print("-" * 60)
-            print(mermaid_code)
-            print("-" * 60)
+            # Validate basic structure
+            is_valid = (
+                'flowchart' in mermaid_code.lower() and
+                '-->' in mermaid_code
+            )
 
-            # Save to file
-            output_path = Path(__file__).parent / "test_gemini_output.mmd"
-            output_path.write_text(mermaid_code)
-            print(f"\n💾 Saved to: {output_path}")
+            if is_valid:
+                record_test("Simple Text-to-Mermaid", True, f"Generated {len(mermaid_code)} characters", time.time() - start_time)
+                print("✅ Generation Successful!")
+                print("\n📄 Generated Mermaid Code:")
+                print("-" * 70)
+                print(mermaid_code)
+                print("-" * 70)
 
-            return True
+                # Save output
+                output_path = Path(__file__).parent / "test_output_simple.mmd"
+                output_path.write_text(mermaid_code)
+                print(f"\n💾 Saved to: {output_path}")
+                return True
+            else:
+                record_test("Simple Text-to-Mermaid", False, "Invalid Mermaid syntax", time.time() - start_time)
+                print(f"❌ Invalid Mermaid syntax generated:\n{mermaid_code}")
+                return False
         else:
-            print("❌ Generation failed - returned empty result")
+            record_test("Simple Text-to-Mermaid", False, "Empty response", time.time() - start_time)
+            print("❌ Generation returned empty result")
             return False
 
     except Exception as e:
+        record_test("Simple Text-to-Mermaid", False, str(e), time.time() - start_time)
         print(f"❌ Error: {e}")
         import traceback
         traceback.print_exc()
         return False
 
 
-async def test_fallback_to_ollama():
-    """Test that Ollama fallback works when Gemini is unavailable"""
-    print("\n" + "="*60)
-    print("TEST 3: Gemini → Ollama Fallback")
-    print("="*60 + "\n")
+async def test_3_complex_flowchart():
+    """Test 3: Complex flowchart with decisions and loops"""
+    print("\n" + "="*70)
+    print("TEST 3: Complex Flowchart Generation")
+    print("="*70 + "\n")
+
+    start_time = time.time()
 
     try:
-        from whiteboard_pipeline.components.generators import MermaidFlowGenerator
-        from whiteboard_pipeline.models import TaskStep
+        from whiteboard_pipeline.components.gemini_client import GeminiClient
 
-        # Load config
         config_path = Path(__file__).parent / "config.json"
         with open(config_path) as f:
             config = json.load(f)
 
-        mermaid_config = config['mermaid_generator']
+        client = GeminiClient(config['mermaid_generator'])
 
-        # Initialize generator (should initialize both Gemini and Ollama)
-        generator = MermaidFlowGenerator(mermaid_config)
+        # Complex test case
+        test_description = """
+        User authentication and authorization flow:
+        1. User enters username and password
+        2. System validates credentials
+        3. If credentials are invalid, show error and allow retry (max 3 attempts)
+        4. If max attempts reached, lock account
+        5. If credentials are valid, check user permissions
+        6. If user has admin permissions, redirect to admin dashboard
+        7. If user has regular permissions, redirect to user dashboard
+        8. Log all authentication attempts
+        """
 
-        print(f"✅ Generator initialized")
-        print(f"   Gemini client: {'✅ Available' if generator.gemini_client else '❌ Not available'}")
-        print(f"   Ollama client: {'✅ Available' if generator.ollama_client else '❌ Not available'}")
+        print("📝 Input:")
+        print(test_description)
+        print("\n🔄 Generating complex Mermaid flowchart...\n")
 
-        # Create test task
+        # Generate
+        mermaid_code = await client.generate_mermaid_from_text(
+            test_description,
+            flow_direction="TD"
+        )
+
+        if mermaid_code:
+            # Validate complex structure
+            has_decisions = '?' in mermaid_code or '{' in mermaid_code or 'decision' in mermaid_code.lower()
+            has_multiple_nodes = mermaid_code.count('-->') >= 5
+
+            if has_decisions and has_multiple_nodes:
+                record_test("Complex Flowchart", True, f"Generated {mermaid_code.count('-->')} connections", time.time() - start_time)
+                print("✅ Complex flowchart generated successfully!")
+                print("\n📄 Generated Mermaid Code:")
+                print("-" * 70)
+                print(mermaid_code)
+                print("-" * 70)
+
+                # Save output
+                output_path = Path(__file__).parent / "test_output_complex.mmd"
+                output_path.write_text(mermaid_code)
+                print(f"\n💾 Saved to: {output_path}")
+                return True
+            else:
+                record_test("Complex Flowchart", False, "Missing decision nodes or insufficient complexity", time.time() - start_time)
+                print(f"⚠️ Generated flowchart may be too simple")
+                print(mermaid_code)
+                return False
+        else:
+            record_test("Complex Flowchart", False, "Empty response", time.time() - start_time)
+            print("❌ Generation returned empty result")
+            return False
+
+    except Exception as e:
+        record_test("Complex Flowchart", False, str(e), time.time() - start_time)
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+async def test_4_fallback_system():
+    """Test 4: Test Gemini → Ollama fallback system"""
+    print("\n" + "="*70)
+    print("TEST 4: Fallback System (Gemini → Ollama)")
+    print("="*70 + "\n")
+
+    start_time = time.time()
+
+    try:
+        from whiteboard_pipeline.components.generators import MermaidFlowGenerator
+        from whiteboard_pipeline.models import TaskStep, GeneratorType
+
+        config_path = Path(__file__).parent / "config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        generator = MermaidFlowGenerator(config['mermaid_generator'])
+
+        print(f"✓ Generator initialized")
+        print(f"  Gemini client: {'✅ Available' if generator.gemini_client else '❌ Not available'}")
+        print(f"  Ollama client: {'✅ Available' if generator.ollama_client else '❌ Not available'}")
+
+        # Create test task (corrected parameters)
         task = TaskStep(
-            step_type='generate_flowchart',
+            action='generate_flowchart',
+            generator_type=GeneratorType.MERMAID_FLOW,
             parameters={
-                'content': 'Simple process: Start → Process → End',
+                'content': 'Process: Start → Verify Input → Process Data → End',
                 'direction': 'TD'
             }
         )
 
         context = {
-            'session_id': 'test_session',
+            'session_id': 'test_fallback',
             'input_type': 'text',
             'visual_elements': []
         }
 
         print("\n🔄 Testing generation with fallback system...\n")
 
-        # Generate (will try Gemini first, then Ollama)
+        # Generate (will try Gemini first, then Ollama if Gemini fails)
         result = await generator.generate(task, context)
 
         if result and result.content:
+            generator_used = result.metadata.get('generator', 'unknown')
+            method_used = result.metadata.get('generation_method', 'unknown')
+
+            record_test("Fallback System", True, f"Used: {generator_used} ({method_used})", time.time() - start_time)
             print("✅ Generation successful!")
-            print(f"   Generator used: {result.metadata.get('generator', 'unknown')}")
-            print(f"   Method: {result.metadata.get('generation_method', 'unknown')}")
+            print(f"  Generator used: {generator_used}")
+            print(f"  Method: {method_used}")
+            print(f"  Priority: {result.metadata.get('priority', 'unknown')}")
             print("\n📄 Generated Mermaid:")
-            print("-" * 60)
+            print("-" * 70)
             print(result.content)
-            print("-" * 60)
+            print("-" * 70)
             return True
         else:
-            print("❌ Generation failed")
+            record_test("Fallback System", False, "All generation methods failed", time.time() - start_time)
+            print("❌ Generation failed with all methods")
             return False
 
     except Exception as e:
+        record_test("Fallback System", False, str(e), time.time() - start_time)
         print(f"❌ Error: {e}")
         import traceback
         traceback.print_exc()
         return False
 
 
+async def test_5_end_to_end_pipeline():
+    """Test 5: End-to-end pipeline integration"""
+    print("\n" + "="*70)
+    print("TEST 5: End-to-End Pipeline Integration")
+    print("="*70 + "\n")
+
+    start_time = time.time()
+
+    try:
+        from whiteboard_pipeline.simple_pipeline import SimpleSketchToMermaidPipeline
+        from whiteboard_pipeline.models import WhiteboardInput, InputType
+
+        # Initialize pipeline
+        pipeline = SimpleSketchToMermaidPipeline()
+
+        # Real-world test case
+        test_input = WhiteboardInput(
+            input_type=InputType.TEXT,
+            content="""
+            CI/CD Pipeline workflow:
+            1. Developer pushes code to repository
+            2. Automated tests run
+            3. If tests pass, build Docker image
+            4. If tests fail, notify developer
+            5. Deploy to staging environment
+            6. Run integration tests
+            7. If integration tests pass, deploy to production
+            8. If integration tests fail, rollback and notify team
+            """
+        )
+
+        print("📝 Processing real-world use case: CI/CD Pipeline")
+        print("\n🔄 Running full pipeline...\n")
+
+        # Process through full pipeline (corrected method name)
+        result = await pipeline.process_sketch_to_mermaid(test_input)
+
+        if result.success and result.outputs:
+            mermaid_code = result.outputs[0].content if result.outputs else None
+
+            if not mermaid_code:
+                record_test("End-to-End Pipeline", False, "No output generated", time.time() - start_time)
+                print("❌ No Mermaid code generated")
+                return False
+
+            # Validate quality
+            is_quality = (
+                len(mermaid_code) > 100 and
+                mermaid_code.count('-->') >= 5 and
+                ('test' in mermaid_code.lower() or 'deploy' in mermaid_code.lower())
+            )
+
+            if is_quality:
+                record_test("End-to-End Pipeline", True, f"Pipeline completed in {result.execution_time:.2f}s", time.time() - start_time)
+                print("✅ Pipeline completed successfully!")
+                print(f"\n📊 Metrics:")
+                print(f"  Total duration: {result.execution_time:.2f}s")
+                print(f"  Generator: {result.outputs[0].metadata.get('generator', 'unknown')}")
+                print("\n📄 Generated Mermaid:")
+                print("-" * 70)
+                print(mermaid_code)
+                print("-" * 70)
+
+                # Save output
+                output_path = Path(__file__).parent / "test_output_e2e.mmd"
+                output_path.write_text(mermaid_code)
+                print(f"\n💾 Saved to: {output_path}")
+                return True
+            else:
+                record_test("End-to-End Pipeline", False, "Generated output quality too low", time.time() - start_time)
+                print(f"⚠️ Output quality below threshold:\n{mermaid_code}")
+                return False
+        else:
+            error_msg = result.error_message if result.error_message else "Unknown error"
+            record_test("End-to-End Pipeline", False, error_msg, time.time() - start_time)
+            print(f"❌ Pipeline failed: {error_msg}")
+            return False
+
+    except Exception as e:
+        record_test("End-to-End Pipeline", False, str(e), time.time() - start_time)
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+async def test_6_performance_benchmark():
+    """Test 6: Performance benchmarking"""
+    print("\n" + "="*70)
+    print("TEST 6: Performance Benchmarking")
+    print("="*70 + "\n")
+
+    start_time = time.time()
+
+    try:
+        from whiteboard_pipeline.components.gemini_client import GeminiClient
+
+        config_path = Path(__file__).parent / "config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        client = GeminiClient(config['mermaid_generator'])
+
+        # Run multiple generations
+        test_cases = [
+            "Simple: Start → Process → End",
+            "Login flow: Enter credentials → Validate → Redirect",
+            "Shopping cart: Add item → Update total → Checkout"
+        ]
+
+        print(f"Running {len(test_cases)} generations for performance test...\n")
+
+        timings = []
+        for i, test_case in enumerate(test_cases, 1):
+            print(f"  [{i}/{len(test_cases)}] {test_case}...", end=" ")
+
+            gen_start = time.time()
+            result = await client.generate_mermaid_from_text(test_case, "TD")
+            gen_time = time.time() - gen_start
+
+            if result:
+                timings.append(gen_time)
+                print(f"✓ ({gen_time:.2f}s)")
+            else:
+                print("✗ Failed")
+
+        if timings:
+            avg_time = sum(timings) / len(timings)
+            min_time = min(timings)
+            max_time = max(timings)
+
+            # Performance threshold: avg should be < 5s
+            is_performant = avg_time < 5.0
+
+            record_test("Performance Benchmark", is_performant, f"Avg: {avg_time:.2f}s, Min: {min_time:.2f}s, Max: {max_time:.2f}s", time.time() - start_time)
+
+            print(f"\n📊 Performance Results:")
+            print(f"  Average: {avg_time:.2f}s")
+            print(f"  Minimum: {min_time:.2f}s")
+            print(f"  Maximum: {max_time:.2f}s")
+            print(f"  Threshold: < 5.0s")
+
+            if is_performant:
+                print(f"\n✅ Performance is acceptable!")
+                return True
+            else:
+                print(f"\n⚠️ Performance below threshold")
+                return False
+        else:
+            record_test("Performance Benchmark", False, "All generations failed", time.time() - start_time)
+            print("\n❌ All test generations failed")
+            return False
+
+    except Exception as e:
+        record_test("Performance Benchmark", False, str(e), time.time() - start_time)
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def print_test_summary():
+    """Print final test summary"""
+    print("\n" + "="*70)
+    print("📊 TEST SUMMARY")
+    print("="*70 + "\n")
+
+    print(f"Total Tests:  {test_results['total']}")
+    print(f"✅ Passed:    {test_results['passed']}")
+    print(f"❌ Failed:    {test_results['failed']}")
+    print(f"⏭️  Skipped:   {test_results['skipped']}")
+    print(f"\nSuccess Rate: {(test_results['passed'] / test_results['total'] * 100) if test_results['total'] > 0 else 0:.1f}%")
+
+    print("\n" + "-"*70)
+    print("Detailed Results:")
+    print("-"*70)
+    for test in test_results['tests']:
+        print(f"{test['status']} - {test['name']} ({test['duration']:.2f}s)")
+        if test['message']:
+            print(f"         {test['message']}")
+
+    print("\n" + "="*70)
+
+    if test_results['failed'] == 0:
+        print("🎉 ALL TESTS PASSED!")
+        print("Google Gemini integration is working perfectly!")
+    else:
+        print(f"⚠️  {test_results['failed']} test(s) failed. Please review the errors above.")
+
+    print("="*70 + "\n")
+
+
 async def main():
     """Run all tests"""
-    print("\n" + "="*60)
-    print("🧪 GOOGLE GEMINI INTEGRATION TESTS")
-    print("="*60)
+    print("\n" + "="*70)
+    print("🧪 COMPREHENSIVE GOOGLE GEMINI INTEGRATION TESTS")
+    print("="*70)
+    print("\nTesting all current capabilities:")
+    print("  1. API Connectivity")
+    print("  2. Simple Text-to-Mermaid")
+    print("  3. Complex Flowchart Generation")
+    print("  4. Fallback System")
+    print("  5. End-to-End Pipeline")
+    print("  6. Performance Benchmark")
 
-    results = {
-        'health_check': False,
-        'text_to_mermaid': False,
-        'fallback': False
-    }
+    # Run all tests
+    await test_1_api_connectivity()
+    await test_2_simple_text_to_mermaid()
+    await test_3_complex_flowchart()
+    await test_4_fallback_system()
+    await test_5_end_to_end_pipeline()
+    await test_6_performance_benchmark()
 
-    # Test 1: Health check
-    results['health_check'] = await test_gemini_health()
+    # Print summary
+    print_test_summary()
 
-    # Only run remaining tests if health check passes
-    if results['health_check']:
-        # Test 2: Text-to-Mermaid
-        results['text_to_mermaid'] = await test_text_to_mermaid()
-
-        # Test 3: Fallback system
-        results['fallback'] = await test_fallback_to_ollama()
-    else:
-        print("\n⚠️  Skipping remaining tests due to health check failure")
-        print("   Please configure your Gemini API key in config.json")
-
-    # Summary
-    print("\n" + "="*60)
-    print("📊 TEST SUMMARY")
-    print("="*60)
-    print(f"Health Check:     {'✅ PASS' if results['health_check'] else '❌ FAIL'}")
-    print(f"Text → Mermaid:   {'✅ PASS' if results['text_to_mermaid'] else '⏭️  SKIP' if not results['health_check'] else '❌ FAIL'}")
-    print(f"Fallback System:  {'✅ PASS' if results['fallback'] else '⏭️  SKIP' if not results['health_check'] else '❌ FAIL'}")
-    print("="*60)
-
-    all_pass = all(results.values())
-    if all_pass:
-        print("\n🎉 All tests passed! Gemini integration is working correctly.")
-    elif results['health_check']:
-        print("\n⚠️  Some tests failed. Check the errors above.")
-    else:
-        print("\n⚠️  Please configure your Gemini API key to run tests.")
+    # Exit code
+    exit_code = 0 if test_results['failed'] == 0 else 1
+    return exit_code
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    exit_code = asyncio.run(main())
+    exit(exit_code)

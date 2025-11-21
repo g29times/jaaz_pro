@@ -31,12 +31,12 @@ A production-ready Python pipeline that converts whiteboard sketches and text in
 
 ## 🚀 Key Improvements (Production Ready)
 
-✅ **Local LLM with Ollama** — Zero-cost local inference for development, production API available
-✅ **Use vLLM** — Production-ready model serving (Linux), Ollama fallback (macOS)
+✅ **Google Gemini Integration** — High-quality LLM for text-to-Mermaid generation (PRIMARY)
+✅ **Dual LLM System** — Automatic fallback from Gemini → Ollama → Rule-based
 ✅ **OCR is mandatory** — Reliable text extraction with PaddleOCR + EasyOCR backup
 ✅ **Start small** — Perfect the core "Sketch → Mermaid" workflow first
 ✅ **Log everything** — Comprehensive feedback collection for fine-tuning
-✅ **pytest** — Professional testing framework instead of unittest  
+✅ **pytest** — Professional testing framework with comprehensive tests
 
 ## 📦 Quick Start
 
@@ -46,8 +46,44 @@ A production-ready Python pipeline that converts whiteboard sketches and text in
 git clone <repository-url>
 cd jaaz_pro
 
-# Automated setup (detects macOS vs Linux)
-chmod +x setup.sh
+# Install dependencies (includes Google GenAI SDK)
+pip install -r requirements.txt
+# OR for macOS:
+pip install -r requirements_macos.txt
+```
+
+### Test Google Gemini Integration
+
+```bash
+# API key is already configured in config.json
+# Run comprehensive tests
+python test_gemini_integration.py
+
+# Expected output:
+# ✅ API Connectivity - PASS
+# ✅ Simple Text-to-Mermaid - PASS
+# ✅ Complex Flowchart - PASS
+# ✅ Fallback System - PASS
+# ✅ End-to-End Pipeline - PASS
+# ✅ Performance Benchmark - PASS
+# 🎉 ALL TESTS PASSED!
+```
+
+### Run Demo
+
+```bash
+# Run all examples
+python demo.py
+
+# Quick test
+python demo.py --quick
+```
+
+### Documentation
+
+- **[Google AI Integration Guide](GOOGLE_AI_INTEGRATION.md)** - Complete setup and usage guide
+- **[Quick Start Guide](QUICK_START.md)** - Quick start for new users
+- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Phase 2 & 3 roadmap
 ./setup.sh
 
 # Or manual installation:
