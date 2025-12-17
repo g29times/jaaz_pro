@@ -3,33 +3,79 @@ Simplified Whiteboard Pipeline - Sketch to Mermaid Workflow
 
 Focus on getting "Sketch → Mermaid" working first, then expand.
 Following the recommendation to start small and prove the core concept.
+
+Now supports:
+- Text → Mermaid (Phase 1) ✅
+- Image → Mermaid (Phase 2) ✅
+- Text → Image (Phase 3) ✅
+- Combined outputs (Mermaid + Image)
 """
 
 import asyncio
 import logging
+import json
 from typing import Dict, Any, Optional
 from datetime import datetime
 from pathlib import Path
 
-from .models import WhiteboardInput, ProcessingResult, GeneratorOutput
+from .models import WhiteboardInput, ProcessingResult, GeneratorOutput, InputType
 from .components import InputParser, VLMEngine, MermaidFlowGenerator
 
 
 class SimpleSketchToMermaidPipeline:
-    """Simplified pipeline focused on Sketch → Mermaid conversion"""
-    
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {}
+    """
+    Simplified pipeline focused on Sketch → Mermaid conversion
+
+    Now supports all 3 phases:
+    - Phase 1: Text → Mermaid ✅
+    - Phase 2: Image → Mermaid ✅
+    - Phase 3: Text → Image ✅
+    """
+
+    def __init__(self, config_path: str = "config.json"):
+        # Load configuration
+        if isinstance(config_path, str):
+            config_file = Path(config_path)
+            if config_file.exists():
+                with open(config_file) as f:
+                    self.config = json.load(f)
+            else:
+                self.config = {}
+        else:
+            self.config = config_path or {}
+
         self.logger = self._setup_logging()
-        
-        # Initialize only the components we need for Sketch → Mermaid
+
+        # Initialize components
         self.input_parser = InputParser(self.config.get('input_parser', {}))
         self.vlm_engine = VLMEngine(self.config.get('vlm_engine', {}))
         self.mermaid_generator = MermaidFlowGenerator(self.config.get('mermaid_generator', {}))
-        
+
+        # Phase 2: Image input handler
+        try:
+            from .components.image_input_handler import ImageInputHandler
+            self.image_handler = ImageInputHandler(self.config.get('image_input', {}))
+            self.image_handler_available = True
+        except Exception as e:
+            self.logger.warning(f"ImageInputHandler not available: {e}")
+            self.image_handler = None
+            self.image_handler_available = False
+
+        # Phase 3: Gemini client for image generation
+        try:
+            from .components.gemini_client import GeminiClient
+            self.gemini_client = GeminiClient(self.config.get('mermaid_generator', {}))
+            self.gemini_available = True
+        except Exception as e:
+            self.logger.warning(f"GeminiClient not available: {e}")
+            self.gemini_client = None
+            self.gemini_available = False
+
         # Feedback logging
         self.session_logs = []
         self.logger.info("SimpleSketchToMermaidPipeline initialized")
+        self.logger.info(f"  Image input support: {self.image_handler_available}")
+        self.logger.info(f"  Image generation support: {self.gemini_available}")
     
     def _setup_logging(self) -> logging.Logger:
         """Setup comprehensive logging for feedback collection"""
@@ -198,7 +244,202 @@ class SimpleSketchToMermaidPipeline:
                     'error_occurred': True
                 }
             )
-    
+
+    async def process_image_to_mermaid(self, whiteboard_input: WhiteboardInput) -> ProcessingResult:
+        """
+        Phase 2: Process image/sketch to Mermaid flowchart
+
+        Args:
+            whiteboard_input: Input with InputType.IMAGE and image_path
+
+        Returns:
+            ProcessingResult with Mermaid flowchart output
+        """
+        if not self.image_handler_available:
+            return ProcessingResult(
+                outputs=[],
+                execution_time=0.0,
+                success=False,
+                error_message="ImageInputHandler not available"
+            )
+
+        if not self.gemini_available:
+            return ProcessingResult(
+                outputs=[],
+                execution_time=0.0,
+                success=False,
+                error_message="GeminiClient not available"
+            )
+
+        session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.logger.info(f"[{session_id}] Starting Image → Mermaid processing")
+
+        start_time = datetime.now()
+
+        try:
+            # Step 1: Load and preprocess image
+            self.logger.info(f"[{session_id}] Loading and preprocessing image")
+            image = await self.image_handler.load_and_preprocess(whiteboard_input.image_path)
+
+            # Step 2: Generate Mermaid using Gemini Vision
+            self.logger.info(f"[{session_id}] Generating Mermaid with Gemini Vision")
+            flow_direction = whiteboard_input.parameters.get('direction', 'TD')
+
+            mermaid_code = await self.gemini_client.generate_mermaid_from_image_object(
+                image=image,
+                flow_direction=flow_direction
+            )
+
+            if not mermaid_code:
+                raise ValueError("Gemini Vision returned empty result")
+
+            # Create output
+            output = GeneratorOutput(
+                content=mermaid_code,
+                output_type="mermaid",
+                file_path=None,
+                metadata={
+                    'generator': 'gemini_vision',
+                    'source': 'image',
+                    'image_size': self.image_handler.get_image_info(image)['size'],
+                    'preprocessing': 'applied'
+                }
+            )
+
+            total_duration = (datetime.now() - start_time).total_seconds()
+
+            self.logger.info(f"[{session_id}] Image → Mermaid completed in {total_duration:.2f}s")
+
+            return ProcessingResult(
+                outputs=[output],
+                execution_time=total_duration,
+                success=True
+            )
+
+        except Exception as e:
+            total_duration = (datetime.now() - start_time).total_seconds()
+            error_msg = f"Image → Mermaid processing failed: {str(e)}"
+            self.logger.error(f"[{session_id}] {error_msg}")
+
+            return ProcessingResult(
+                outputs=[],
+                execution_time=total_duration,
+                success=False,
+                error_message=error_msg
+            )
+
+    async def process_text_to_combined_output(self, whiteboard_input: WhiteboardInput,
+                                             generate_image: bool = True) -> ProcessingResult:
+        """
+        Phase 3: Process text to BOTH Mermaid code AND visual image
+
+        Args:
+            whiteboard_input: Input with InputType.TEXT
+            generate_image: Whether to also generate visual image
+
+        Returns:
+            ProcessingResult with both Mermaid code and image outputs
+        """
+        session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.logger.info(f"[{session_id}] Starting Text → Combined Output (Mermaid + Image)")
+
+        start_time = datetime.now()
+
+        try:
+            # Step 1: Generate Mermaid code (existing workflow)
+            self.logger.info(f"[{session_id}] Step 1: Generating Mermaid code")
+            mermaid_result = await self.process_sketch_to_mermaid(whiteboard_input)
+
+            if not mermaid_result.success:
+                return mermaid_result
+
+            mermaid_output = mermaid_result.outputs[0]
+            outputs = [mermaid_output]
+
+            # Step 2: Generate visual image (if requested and available)
+            if generate_image and self.gemini_available:
+                self.logger.info(f"[{session_id}] Step 2: Generating visual image")
+
+                description = whiteboard_input.content
+                style = whiteboard_input.parameters.get('image_style', 'professional flowchart diagram')
+
+                image_bytes = await self.gemini_client.generate_diagram_image(
+                    description=description,
+                    style=style
+                )
+
+                if image_bytes:
+                    image_output = GeneratorOutput(
+                        content=image_bytes,
+                        output_type="image",
+                        file_path=None,
+                        metadata={
+                            'generator': 'gemini_image',
+                            'source': 'text',
+                            'format': 'png',
+                            'size_bytes': len(image_bytes)
+                        }
+                    )
+                    outputs.append(image_output)
+                    self.logger.info(f"[{session_id}] Image generated: {len(image_bytes)} bytes")
+                else:
+                    self.logger.warning(f"[{session_id}] Image generation failed")
+
+            total_duration = (datetime.now() - start_time).total_seconds()
+
+            self.logger.info(f"[{session_id}] Combined output generated in {total_duration:.2f}s")
+            self.logger.info(f"[{session_id}] Outputs: {len(outputs)} ({', '.join([o.output_type for o in outputs])})")
+
+            return ProcessingResult(
+                outputs=outputs,
+                execution_time=total_duration,
+                success=True
+            )
+
+        except Exception as e:
+            total_duration = (datetime.now() - start_time).total_seconds()
+            error_msg = f"Combined output processing failed: {str(e)}"
+            self.logger.error(f"[{session_id}] {error_msg}")
+
+            return ProcessingResult(
+                outputs=[],
+                execution_time=total_duration,
+                success=False,
+                error_message=error_msg
+            )
+
+    async def process(self, whiteboard_input: WhiteboardInput,
+                     generate_image: bool = False) -> ProcessingResult:
+        """
+        Universal processing method that routes to appropriate workflow
+
+        Args:
+            whiteboard_input: Input data
+            generate_image: Whether to also generate visual image output
+
+        Returns:
+            ProcessingResult with appropriate outputs
+        """
+        if whiteboard_input.input_type == InputType.IMAGE:
+            # Phase 2: Image → Mermaid
+            return await self.process_image_to_mermaid(whiteboard_input)
+
+        elif whiteboard_input.input_type == InputType.TEXT:
+            if generate_image:
+                # Phase 3: Text → Mermaid + Image
+                return await self.process_text_to_combined_output(whiteboard_input, generate_image=True)
+            else:
+                # Phase 1: Text → Mermaid
+                return await self.process_sketch_to_mermaid(whiteboard_input)
+
+        else:
+            return ProcessingResult(
+                outputs=[],
+                execution_time=0.0,
+                success=False,
+                error_message=f"Unsupported input type: {whiteboard_input.input_type}"
+            )
+
     def _log_session_feedback(self, session_log: Dict[str, Any]):
         """Log detailed session feedback for future fine-tuning"""
         

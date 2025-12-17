@@ -142,14 +142,42 @@ Now generate the flowchart for the given process description:"""
         return result
 
     async def generate_mermaid_from_image(self, image_path: str, flow_direction: str = "TD") -> Optional[str]:
-        """Generate Mermaid flowchart from image using Gemini's vision capabilities"""
+        """
+        Generate Mermaid flowchart from image file using Gemini's vision capabilities
 
+        Args:
+            image_path: Path to image file
+            flow_direction: Flow direction (TD, LR, etc.)
+
+        Returns:
+            Mermaid flowchart code or None
+        """
         try:
             from PIL import Image
 
             # Load image
             image = Image.open(image_path)
+            self.logger.info(f"Loaded image from: {image_path}")
 
+            # Use the PIL Image method
+            return await self.generate_mermaid_from_image_object(image, flow_direction)
+
+        except Exception as e:
+            self.logger.error(f"Failed to load image from {image_path}: {e}")
+            return None
+
+    async def generate_mermaid_from_image_object(self, image: "Image.Image", flow_direction: str = "TD") -> Optional[str]:
+        """
+        Generate Mermaid flowchart from PIL Image object using Gemini's vision capabilities
+
+        Args:
+            image: PIL Image object
+            flow_direction: Flow direction (TD, LR, etc.)
+
+        Returns:
+            Mermaid flowchart code or None
+        """
+        try:
             system_instruction = """You are an expert at analyzing hand-drawn flowcharts and diagrams.
 Analyze the image and convert it into a clean Mermaid flowchart diagram.
 Identify shapes, text labels, arrows, and connections.
@@ -169,14 +197,23 @@ Generate ONLY the Mermaid flowchart code starting with 'flowchart {flow_directio
             # Combine system instruction and prompt
             full_prompt = f"{system_instruction}\n\n{prompt}"
 
-            self.logger.info(f"Analyzing image with Gemini Vision: {image_path}")
+            self.logger.info(f"Analyzing image with Gemini Vision: {image.size}")
 
-            # For vision, we need to pass the image as part of contents
             # Convert PIL image to bytes
             import io
             img_byte_arr = io.BytesIO()
-            image.save(img_byte_arr, format=image.format or 'PNG')
+            # Always save as PNG for consistency
+            image_format = image.format if image.format else 'PNG'
+            if image_format.upper() not in ['PNG', 'JPEG', 'JPG']:
+                image_format = 'PNG'
+            image.save(img_byte_arr, format=image_format)
             img_byte_arr = img_byte_arr.getvalue()
+
+            mime_type = f"image/{image_format.lower()}"
+            if mime_type == "image/jpg":
+                mime_type = "image/jpeg"
+
+            self.logger.debug(f"Image converted to {mime_type}, size: {len(img_byte_arr)} bytes")
 
             # Generate with image using new SDK
             config = types.GenerateContentConfig(
@@ -189,7 +226,7 @@ Generate ONLY the Mermaid flowchart code starting with 'flowchart {flow_directio
                 model=self.model_name,
                 contents=[
                     types.Part.from_text(full_prompt),
-                    types.Part.from_bytes(data=img_byte_arr, mime_type=f"image/{image.format.lower()}" if image.format else "image/png")
+                    types.Part.from_bytes(data=img_byte_arr, mime_type=mime_type)
                 ],
                 config=config
             )
@@ -197,6 +234,7 @@ Generate ONLY the Mermaid flowchart code starting with 'flowchart {flow_directio
             if response and response.text:
                 result = response.text.strip()
                 result = self._extract_mermaid_code(result)
+                self.logger.info(f"Generated Mermaid code from image ({len(result)} chars)")
                 return result
             else:
                 self.logger.warning("Gemini vision returned empty response")

@@ -610,6 +610,248 @@ def print_test_summary():
     print("="*70 + "\n")
 
 
+async def test_8_flowchart_image_generation():
+    """Test 8: Generate flowchart diagram image from text description"""
+    print("\n" + "="*70)
+    print("TEST 8: Flowchart Diagram Image Generation")
+    print("="*70 + "\n")
+
+    print("ℹ️  Testing specialized flowchart image generation")
+    print()
+
+    start_time = time.time()
+
+    try:
+        from whiteboard_pipeline.components.gemini_client import GeminiClient
+
+        config_path = Path(__file__).parent / "config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        client = GeminiClient(config['mermaid_generator'])
+
+        # Test case: Generate a professional flowchart diagram
+        test_description = """E-commerce checkout process:
+- User reviews cart items
+- Click checkout button
+- Enter shipping address
+- Choose shipping method (Standard or Express)
+- Enter payment information
+- System validates payment
+- If payment fails: show error, allow retry
+- If payment succeeds: create order, send confirmation email
+- Display order confirmation page"""
+
+        print(f"📝 Generating professional flowchart image")
+        print(f"   Description: E-commerce checkout process")
+        print("\n🔄 Generating with Gemini Flash Image...\n")
+
+        # Generate flowchart-style image
+        image_bytes = await client.generate_diagram_image(
+            description=test_description,
+            style="professional flowchart diagram with clean shapes, clear labels, arrows, and decision diamonds"
+        )
+
+        if image_bytes:
+            output_path = Path(__file__).parent / "test_output_flowchart.png"
+
+            try:
+                output_path.write_bytes(image_bytes)
+
+                from PIL import Image
+                import io
+                img = Image.open(io.BytesIO(image_bytes))
+
+                record_test("Flowchart Image Generation", True, f"Generated {img.size} flowchart", time.time() - start_time)
+                print("✅ Flowchart image generation successful!")
+                print(f"\n📊 Image Details:")
+                print(f"  Size: {img.size}")
+                print(f"  File: {output_path.name}")
+                print(f"  Type: Professional flowchart diagram")
+                print(f"\n💾 Saved to: {output_path}")
+                return True
+
+            except Exception as save_error:
+                record_test("Flowchart Image Generation", False, f"Save failed: {save_error}", time.time() - start_time)
+                print(f"❌ Failed to save: {save_error}")
+                return False
+        else:
+            record_test("Flowchart Image Generation", False, "No image returned", time.time() - start_time)
+            print("❌ Image generation returned empty result")
+            return False
+
+    except Exception as e:
+        record_test("Flowchart Image Generation", False, str(e), time.time() - start_time)
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+async def test_9_technical_diagram_generation():
+    """Test 9: Generate technical system architecture diagram"""
+    print("\n" + "="*70)
+    print("TEST 9: Technical Architecture Diagram Generation")
+    print("="*70 + "\n")
+
+    print("ℹ️  Testing technical diagram generation")
+    print()
+
+    start_time = time.time()
+
+    try:
+        from whiteboard_pipeline.components.gemini_client import GeminiClient
+
+        config_path = Path(__file__).parent / "config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        client = GeminiClient(config['mermaid_generator'])
+
+        # Test case: System architecture diagram
+        test_description = """Microservices architecture diagram:
+- Frontend (React app) at the top
+- API Gateway in the middle
+- Three backend services: User Service, Order Service, Payment Service
+- Databases: User DB, Order DB, Payment DB (one for each service)
+- Message Queue connecting all services
+- Show arrows indicating data flow between components"""
+
+        print(f"📝 Generating technical architecture diagram")
+        print(f"   Type: Microservices architecture")
+        print("\n🔄 Generating...\n")
+
+        # Generate technical diagram
+        image_bytes = await client.generate_diagram_image(
+            description=test_description,
+            style="clean technical architecture diagram, modern design, boxes and arrows"
+        )
+
+        if image_bytes:
+            output_path = Path(__file__).parent / "test_output_architecture.png"
+
+            try:
+                output_path.write_bytes(image_bytes)
+
+                from PIL import Image
+                import io
+                img = Image.open(io.BytesIO(image_bytes))
+
+                record_test("Technical Diagram Generation", True, f"Generated {img.size} diagram", time.time() - start_time)
+                print("✅ Technical diagram generation successful!")
+                print(f"\n📊 Image Details:")
+                print(f"  Size: {img.size}")
+                print(f"  Type: System architecture diagram")
+                print(f"\n💾 Saved to: {output_path}")
+                return True
+
+            except Exception as save_error:
+                record_test("Technical Diagram Generation", False, f"Save failed: {save_error}", time.time() - start_time)
+                print(f"❌ Failed to save: {save_error}")
+                return False
+        else:
+            record_test("Technical Diagram Generation", False, "No image returned", time.time() - start_time)
+            print("❌ Image generation returned empty result")
+            return False
+
+    except Exception as e:
+        record_test("Technical Diagram Generation", False, str(e), time.time() - start_time)
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+async def test_10_combined_mermaid_and_image():
+    """Test 10: Generate both Mermaid code AND image from same description"""
+    print("\n" + "="*70)
+    print("TEST 10: Combined Mermaid + Image Generation")
+    print("="*70 + "\n")
+
+    print("ℹ️  Testing combined output (Mermaid code + visual image)")
+    print()
+
+    start_time = time.time()
+
+    try:
+        from whiteboard_pipeline.components.gemini_client import GeminiClient
+
+        config_path = Path(__file__).parent / "config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        client = GeminiClient(config['mermaid_generator'])
+
+        # Test case: User authentication flow
+        test_description = """User login and authentication process:
+1. User enters username and password
+2. System validates credentials
+3. If invalid: show error message, allow retry (max 3 attempts)
+4. If max attempts: lock account for 30 minutes
+5. If valid: check user role
+6. If admin: redirect to admin dashboard
+7. If regular user: redirect to user dashboard
+8. Log all login attempts"""
+
+        print(f"📝 Generating BOTH Mermaid code and visual image")
+        print(f"   Process: User authentication flow")
+        print("\n🔄 Step 1: Generating Mermaid code...")
+
+        # Generate Mermaid code
+        mermaid_code = await client.generate_mermaid_from_text(
+            test_description,
+            flow_direction="TD"
+        )
+
+        print("✓ Mermaid code generated")
+        print("\n🔄 Step 2: Generating visual image...")
+
+        # Generate visual image
+        image_bytes = await client.generate_diagram_image(
+            description=test_description,
+            style="professional flowchart with decision diamonds and clear flow"
+        )
+
+        if mermaid_code and image_bytes:
+            # Save Mermaid code
+            mermaid_path = Path(__file__).parent / "test_output_combined.mmd"
+            mermaid_path.write_text(mermaid_code)
+
+            # Save image
+            image_path = Path(__file__).parent / "test_output_combined.png"
+            image_path.write_bytes(image_bytes)
+
+            from PIL import Image
+            import io
+            img = Image.open(io.BytesIO(image_bytes))
+
+            record_test("Combined Output", True, "Both Mermaid and image generated", time.time() - start_time)
+            print("✅ Combined generation successful!")
+            print(f"\n📊 Outputs:")
+            print(f"  Mermaid code: {len(mermaid_code)} characters")
+            print(f"  Image size: {img.size}")
+            print(f"\n💾 Saved files:")
+            print(f"  {mermaid_path}")
+            print(f"  {image_path}")
+            print(f"\n✨ You can now:")
+            print(f"  - Render Mermaid code in documentation")
+            print(f"  - Use image in presentations")
+            return True
+
+        else:
+            failed_part = "Mermaid code" if not mermaid_code else "Image"
+            record_test("Combined Output", False, f"{failed_part} generation failed", time.time() - start_time)
+            print(f"❌ {failed_part} generation failed")
+            return False
+
+    except Exception as e:
+        record_test("Combined Output", False, str(e), time.time() - start_time)
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 async def main():
     """Run all tests"""
     print("\n" + "="*70)
@@ -622,7 +864,10 @@ async def main():
     print("  4. Fallback System")
     print("  5. End-to-End Pipeline")
     print("  6. Performance Benchmark")
-    print("  7. Image Generation (optional - requires Google Cloud)")
+    print("  7. Image Generation (Basic)")
+    print("  8. Flowchart Image Generation")
+    print("  9. Technical Diagram Generation")
+    print(" 10. Combined Mermaid + Image Output")
 
     # Run all tests
     await test_1_api_connectivity()
@@ -632,6 +877,9 @@ async def main():
     await test_5_end_to_end_pipeline()
     await test_6_performance_benchmark()
     await test_7_image_generation()
+    await test_8_flowchart_image_generation()
+    await test_9_technical_diagram_generation()
+    await test_10_combined_mermaid_and_image()
 
     # Print summary
     print_test_summary()

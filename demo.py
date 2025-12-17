@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-
 """
-🚀 COMPREHENSIVE DEMO: Text-to-Flowchart with LLM
-==================================================
+🚀 COMPREHENSIVE DEMO: Whiteboard Processing Pipeline
+=====================================================
 
-This is the MAIN DEMO FILE for the whiteboard processing pipeline.
-It demonstrates all key features with LLM as the primary intelligence.
+Showcases ALL 3 phases:
+- Phase 1: Text → Mermaid ✅
+- Phase 2: Image → Mermaid ✅
+- Phase 3: Text → Image ✅
+- Combined: Text → Mermaid + Image ✅
 
 Usage:
     python demo.py              # Run all examples
@@ -12,369 +16,336 @@ Usage:
 """
 
 import asyncio
-import json
+import logging
 import sys
 from pathlib import Path
-from whiteboard_pipeline.simple_pipeline import SimpleSketchToMermaidPipeline
-from whiteboard_pipeline.models import WhiteboardInput, InputType
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 
-# ============================================================================
-# EXAMPLE 1: Simple Text to Flowchart
-# ============================================================================
-
-async def example_simple_text_to_flowchart():
-    """Basic example: Convert text description to Mermaid flowchart"""
+async def demo_1_text_to_mermaid():
+    """
+    DEMO 1: Text → Mermaid Flowchart (Phase 1)
+    Classic text description to Mermaid conversion
+    """
     print("\n" + "="*70)
-    print("📝 EXAMPLE 1: Simple Text → Flowchart")
-    print("="*70)
+    print("DEMO 1: Text → Mermaid Flowchart (Phase 1)")
+    print("="*70 + "\n")
 
-    # Load configuration
-    with open('config.json', 'r') as f:
-        config = json.load(f)
+    from whiteboard_pipeline.simple_pipeline import SimpleSketchToMermaidPipeline
+    from whiteboard_pipeline.models import WhiteboardInput, InputType
 
-    pipeline = SimpleSketchToMermaidPipeline(config)
+    pipeline = SimpleSketchToMermaidPipeline()
 
-    # Simple process description
+    # Simple CI/CD workflow
+    description = """CI/CD Pipeline Workflow:
+1. Developer pushes code to Git repository
+2. Automated tests run
+3. If tests pass: build Docker image
+4. If tests fail: notify developer
+5. Deploy to staging environment
+6. Run integration tests
+7. If integration tests pass: deploy to production
+8. If integration tests fail: rollback and notify team"""
+
+    print("📝 Input Description:")
+    print(description)
+    print("\n🔄 Processing...\n")
+
     input_data = WhiteboardInput(
-        content="""
-        User Login Process:
-        1. User enters email and password
-        2. System validates credentials
-        3. If valid: Grant access to dashboard
-        4. If invalid: Show error and allow retry
-        """,
-        input_type=InputType.TEXT
+        input_type=InputType.TEXT,
+        content=description
     )
-
-    print(f"\n💬 Input: {input_data.content[:80]}...")
-    print("\n🤖 Processing with LLM...")
 
     result = await pipeline.process_sketch_to_mermaid(input_data)
 
     if result.success:
-        print(f"✅ Success in {result.execution_time:.2f}s")
-        print(f"\n📄 Generated Mermaid:")
+        mermaid_code = result.outputs[0].content
+        print("✅ Generated Mermaid Code:")
         print("-" * 70)
-        print(result.outputs[0].content)
+        print(mermaid_code)
         print("-" * 70)
+        print(f"\n⏱️  Processing time: {result.execution_time:.2f}s")
 
-        # Show which method was used
-        method = result.outputs[0].metadata.get('generation_method', 'unknown')
-        print(f"\n🔧 Generation Method: {method}")
-
-        if method == 'llm':
-            print("   ✅ LLM was used as PRIMARY method!")
-        else:
-            print(f"   ⚠️  Fallback used: {method}")
-
+        # Save output
+        output_path = Path("demo_text_to_mermaid.mmd")
+        output_path.write_text(mermaid_code)
+        print(f"💾 Saved to: {output_path}")
     else:
-        print(f"❌ Failed: {result.error_message}")
-
-    return result
+        print(f"❌ Error: {result.error_message}")
 
 
-# ============================================================================
-# EXAMPLE 2: Complex Decision Flow
-# ============================================================================
-
-async def example_complex_decision_flow():
-    """Example with multiple decision points and branches"""
+async def demo_2_text_to_image():
+    """
+    DEMO 2: Text → Diagram Image (Phase 3)
+    Generate visual flowchart image from text description
+    """
     print("\n" + "="*70)
-    print("🔀 EXAMPLE 2: Complex Decision Flow")
-    print("="*70)
+    print("DEMO 2: Text → Diagram Image (Phase 3)")
+    print("="*70 + "\n")
 
-    with open('config.json', 'r') as f:
+    from whiteboard_pipeline.components.gemini_client import GeminiClient
+    import json
+
+    # Load config
+    with open("config.json") as f:
         config = json.load(f)
 
-    pipeline = SimpleSketchToMermaidPipeline(config)
+    client = GeminiClient(config['mermaid_generator'])
 
-    input_data = WhiteboardInput(
-        content="""
-        E-commerce Order Processing:
-        1. Customer adds items to shopping cart
-        2. Proceed to checkout
-        3. Enter shipping address
-        4. Select payment method
-        5. Validate payment
-        6. If payment succeeds:
-           - Create order record
-           - Send confirmation email
-           - Process shipping
-        7. If payment fails:
-           - Show error message
-           - Allow retry or cancel
-        8. Update inventory
-        9. Generate tracking number
-        10. Notify customer of shipment
-        """,
-        input_type=InputType.TEXT
+    description = """User Authentication Flowchart:
+- Start
+- User enters username and password
+- System validates credentials
+- If invalid: show error message, allow retry (max 3 attempts)
+- If max attempts reached: lock account
+- If valid: check user role
+- If admin: redirect to admin dashboard
+- If regular user: redirect to user dashboard
+- Log all login attempts
+- End"""
+
+    print("📝 Input Description:")
+    print(description)
+    print("\n🎨 Generating visual image...\n")
+
+    image_bytes = await client.generate_diagram_image(
+        description=description,
+        style="professional flowchart with decision diamonds and clear flow"
     )
 
-    print(f"\n💬 Complex Process: E-commerce Order Processing")
-    print("\n🤖 Processing...")
+    if image_bytes:
+        output_path = Path("demo_text_to_image.png")
+        output_path.write_bytes(image_bytes)
 
-    result = await pipeline.process_sketch_to_mermaid(input_data)
+        print("✅ Image Generated Successfully!")
+        print(f"   Size: {len(image_bytes):,} bytes")
+        print(f"💾 Saved to: {output_path}")
+        print(f"\n✨ Open {output_path} to view the generated flowchart!")
+    else:
+        print("❌ Image generation failed")
+
+
+async def demo_3_combined_output():
+    """
+    DEMO 3: Text → Mermaid + Image (Combined)
+    Generate BOTH Mermaid code AND visual image from same description
+    """
+    print("\n" + "="*70)
+    print("DEMO 3: Text → Mermaid + Image (Combined Output)")
+    print("="*70 + "\n")
+
+    from whiteboard_pipeline.simple_pipeline import SimpleSketchToMermaidPipeline
+    from whiteboard_pipeline.models import WhiteboardInput, InputType
+
+    pipeline = SimpleSketchToMermaidPipeline()
+
+    description = """E-commerce Checkout Process:
+1. Customer reviews shopping cart
+2. Click 'Proceed to Checkout'
+3. Enter shipping address
+4. Select shipping method (Standard or Express)
+5. Enter payment information
+6. System processes payment
+7. If payment fails: show error, offer retry
+8. If payment succeeds: create order, send confirmation email
+9. Display order summary page"""
+
+    print("📝 Input Description:")
+    print(description)
+    print("\n🔄 Generating BOTH outputs...\n")
+
+    input_data = WhiteboardInput(
+        input_type=InputType.TEXT,
+        content=description,
+        parameters={'image_style': 'professional e-commerce flowchart'}
+    )
+
+    # Use the new unified process() method with generate_image=True
+    result = await pipeline.process(input_data, generate_image=True)
 
     if result.success:
-        output = result.outputs[0]
-        print(f"✅ Success in {result.execution_time:.2f}s")
+        print(f"✅ Generated {len(result.outputs)} outputs:")
 
-        # Count complexity
-        lines = output.content.split('\n')
-        node_count = output.content.count('[') + output.content.count('(')
-        decision_count = output.content.count('{')
+        for i, output in enumerate(result.outputs, 1):
+            print(f"\n   Output {i}: {output.output_type.upper()}")
 
-        print(f"\n📊 Flowchart Complexity:")
-        print(f"   Total lines: {len(lines)}")
-        print(f"   Nodes: {node_count}")
-        print(f"   Decisions: {decision_count}")
+            if output.output_type == "mermaid":
+                mermaid_path = Path("demo_combined.mmd")
+                mermaid_path.write_text(output.content)
+                print(f"      📄 Mermaid code: {len(output.content)} characters")
+                print(f"      💾 Saved to: {mermaid_path}")
 
-        print(f"\n📄 Generated Mermaid (first 15 lines):")
-        print("-" * 70)
-        for line in lines[:15]:
-            print(line)
-        if len(lines) > 15:
-            print(f"   ... ({len(lines) - 15} more lines)")
-        print("-" * 70)
+            elif output.output_type == "image":
+                image_path = Path("demo_combined.png")
+                image_path.write_bytes(output.content)
+                print(f"      🖼️  Image: {len(output.content):,} bytes")
+                print(f"      💾 Saved to: {image_path}")
 
-    return result
+        print(f"\n⏱️  Total processing time: {result.execution_time:.2f}s")
+        print(f"\n✨ Perfect! Now you have:")
+        print(f"   - Mermaid code for documentation/GitHub")
+        print(f"   - Visual image for presentations/slides")
+    else:
+        print(f"❌ Error: {result.error_message}")
 
 
-# ============================================================================
-# EXAMPLE 3: Batch Processing
-# ============================================================================
-
-async def example_batch_processing():
-    """Process multiple flowcharts in batch"""
+async def demo_4_image_to_mermaid():
+    """
+    DEMO 4: Image/Sketch → Mermaid (Phase 2)
+    Convert whiteboard photo or hand-drawn sketch to Mermaid
+    NOTE: Requires a test image file
+    """
     print("\n" + "="*70)
-    print("⚡ EXAMPLE 3: Batch Processing")
-    print("="*70)
+    print("DEMO 4: Image/Sketch → Mermaid (Phase 2)")
+    print("="*70 + "\n")
 
-    with open('config.json', 'r') as f:
-        config = json.load(f)
+    from whiteboard_pipeline.simple_pipeline import SimpleSketchToMermaidPipeline
+    from whiteboard_pipeline.models import WhiteboardInput, InputType
 
-    pipeline = SimpleSketchToMermaidPipeline(config)
+    # Check if test image exists
+    test_image_path = "test_images/simple_flowchart.png"
 
-    # Multiple process descriptions
-    processes = [
-        "User Registration: Enter email → Validate format → Send verification → Activate account",
-        "Password Reset: Request reset → Send email → Enter new password → Update account",
-        "API Request: Authenticate → Validate params → Process request → Return response"
+    if not Path(test_image_path).exists():
+        print(f"⚠️  Skipping: Test image not found at {test_image_path}")
+        print(f"\n💡 To test this feature:")
+        print(f"   1. Create a test_images/ directory")
+        print(f"   2. Add a flowchart image (PNG/JPG)")
+        print(f"   3. Update the path in this demo")
+        print(f"\n   Or use the direct Gemini Vision API:")
+        print(f"   ```python")
+        print(f"   from whiteboard_pipeline.components.gemini_client import GeminiClient")
+        print(f"   client = GeminiClient(config)")
+        print(f"   mermaid = await client.generate_mermaid_from_image('photo.jpg')")
+        print(f"   ```")
+        return
+
+    pipeline = SimpleSketchToMermaidPipeline()
+
+    print(f"📷 Input Image: {test_image_path}")
+    print(f"🔄 Processing...\n")
+
+    input_data = WhiteboardInput(
+        input_type=InputType.IMAGE,
+        image_path=test_image_path,
+        parameters={'direction': 'TD'}
+    )
+
+    result = await pipeline.process(input_data)
+
+    if result.success:
+        mermaid_code = result.outputs[0].content
+        print("✅ Generated Mermaid Code from Image:")
+        print("-" * 70)
+        print(mermaid_code)
+        print("-" * 70)
+        print(f"\n⏱️  Processing time: {result.execution_time:.2f}s")
+
+        output_path = Path("demo_image_to_mermaid.mmd")
+        output_path.write_text(mermaid_code)
+        print(f"💾 Saved to: {output_path}")
+    else:
+        print(f"❌ Error: {result.error_message}")
+
+
+async def demo_5_all_features_showcase():
+    """
+    DEMO 5: Complete Feature Showcase
+    Demonstrate all capabilities in one workflow
+    """
+    print("\n" + "="*70)
+    print("DEMO 5: Complete Feature Showcase")
+    print("="*70 + "\n")
+
+    from whiteboard_pipeline.simple_pipeline import SimpleSketchToMermaidPipeline
+    from whiteboard_pipeline.models import WhiteboardInput, InputType
+
+    pipeline = SimpleSketchToMermaidPipeline()
+
+    descriptions = [
+        {
+            "name": "Simple Login",
+            "desc": "User login: Enter credentials → Validate → If valid: dashboard, If invalid: error"
+        },
+        {
+            "name": "Order Processing",
+            "desc": "Order process: Receive order → Check inventory → If available: ship, If not: backorder"
+        },
+        {
+            "name": "User Registration",
+            "desc": "Registration: Fill form → Validate email → Create account → Send verification"
+        }
     ]
 
-    print(f"\n📦 Processing {len(processes)} flowcharts in batch...\n")
+    print(f"🚀 Processing {len(descriptions)} workflows...\n")
 
-    results = []
-    for i, process in enumerate(processes, 1):
-        input_data = WhiteboardInput(
-            content=process,
-            input_type=InputType.TEXT
-        )
-
-        result = await pipeline.process_sketch_to_mermaid(input_data)
-
-        status = "✅" if result.success else "❌"
-        print(f"{status} [{i}/{len(processes)}] {process[:50]}... ({result.execution_time:.2f}s)")
-
-        results.append(result)
-
-    # Summary
-    successful = sum(1 for r in results if r.success)
-    print(f"\n📊 Batch Results: {successful}/{len(results)} successful")
-
-    return results
-
-
-# ============================================================================
-# EXAMPLE 4: Real-world Use Case
-# ============================================================================
-
-async def example_real_world_use_case():
-    """Practical example: CI/CD pipeline flowchart"""
-    print("\n" + "="*70)
-    print("🏭 EXAMPLE 4: Real-World Use Case - CI/CD Pipeline")
-    print("="*70)
-
-    with open('config.json', 'r') as f:
-        config = json.load(f)
-
-    pipeline = SimpleSketchToMermaidPipeline(config)
-
-    input_data = WhiteboardInput(
-        content="""
-        Continuous Integration/Deployment Pipeline:
-
-        1. Developer commits code to Git repository
-        2. Webhook triggers CI/CD system
-        3. System pulls latest code
-        4. Install dependencies
-        5. Run linting and code quality checks
-        6. If checks fail: Notify developer and stop
-        7. If checks pass: Continue
-        8. Run unit tests
-        9. If tests fail: Notify developer and stop
-        10. If tests pass: Build application
-        11. Run integration tests
-        12. If integration tests fail: Notify and stop
-        13. If all tests pass: Deploy to staging environment
-        14. Run smoke tests on staging
-        15. If smoke tests pass: Wait for manual approval
-        16. On approval: Deploy to production
-        17. Monitor application health
-        18. If health check fails: Trigger rollback
-        19. If healthy: Complete deployment
-        20. Notify team of successful deployment
-        """,
-        input_type=InputType.TEXT,
-        metadata={"use_case": "cicd", "category": "devops"}
-    )
-
-    print("\n💬 Use Case: CI/CD Pipeline (20 steps)")
-    print("\n🤖 Processing complex real-world workflow...")
-
-    result = await pipeline.process_sketch_to_mermaid(input_data)
-
-    if result.success:
-        output = result.outputs[0]
-        print(f"✅ Success in {result.execution_time:.2f}s")
-
-        print(f"\n📄 Generated Mermaid Flowchart:")
-        print("-" * 70)
-        print(output.content)
-        print("-" * 70)
-
-        print(f"\n📁 Saved to: {output.file_path}")
-
-        # Show metadata
-        if output.metadata:
-            print(f"\n🔍 Metadata:")
-            print(f"   Method: {output.metadata.get('generation_method')}")
-            print(f"   Model: {output.metadata.get('model', 'N/A')}")
-            print(f"   Lines: {len(output.content.split())}")
-
-    return result
-
-
-# ============================================================================
-# QUICK TEST
-# ============================================================================
-
-async def quick_test():
-    """Quick test to verify system is working"""
-    print("\n" + "="*70)
-    print("⚡ QUICK TEST: Verify System")
-    print("="*70)
-
-    try:
-        with open('config.json', 'r') as f:
-            config = json.load(f)
-
-        print(f"\n⚙️  Configuration:")
-        print(f"   LLM Provider: {config['mermaid_generator']['llm_provider']}")
-        print(f"   Model: {config['mermaid_generator']['ollama_model']}")
-
-        pipeline = SimpleSketchToMermaidPipeline(config)
+    for i, item in enumerate(descriptions, 1):
+        print(f"[{i}/{len(descriptions)}] {item['name']}...")
 
         input_data = WhiteboardInput(
-            content="Login: Enter credentials → Validate → Access granted",
-            input_type=InputType.TEXT
+            input_type=InputType.TEXT,
+            content=item['desc']
         )
 
-        print(f"\n💬 Test Input: {input_data.content}")
-        print("\n🤖 Processing...")
-
-        result = await pipeline.process_sketch_to_mermaid(input_data)
+        result = await pipeline.process(input_data, generate_image=False)
 
         if result.success:
-            print(f"\n✅ System is working! ({result.execution_time:.2f}s)")
-            print(f"\n📄 Output:")
-            print(result.outputs[0].content)
-            return True
+            print(f"   ✅ Generated ({result.execution_time:.2f}s)")
         else:
-            print(f"\n❌ Test failed: {result.error_message}")
-            return False
+            print(f"   ❌ Failed: {result.error_message}")
 
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        return False
+    print(f"\n✅ Batch processing complete!")
 
 
-# ============================================================================
-# MAIN
-# ============================================================================
+async def main():
+    """Run all demos"""
+    # Check for command line arguments
+    if "--help" in sys.argv:
+        print(__doc__)
+        return
 
-async def run_all_examples():
-    """Run all examples"""
+    quick_mode = "--quick" in sys.argv
+
     print("\n" + "="*70)
-    print("🚀 WHITEBOARD PIPELINE - COMPREHENSIVE DEMO")
+    print("🎨 COMPREHENSIVE PIPELINE DEMO")
     print("="*70)
-    print("\nThis demo shows the text-to-flowchart pipeline with LLM.")
-    print("LLM understands requirements and generates Mermaid flowcharts.")
+    print("\nShowcasing all 3 phases of the Whiteboard Processing Pipeline:")
+    print("  Phase 1: Text → Mermaid ✅")
+    print("  Phase 2: Image → Mermaid ✅")
+    print("  Phase 3: Text → Image ✅")
+    print("  Plus: Combined outputs and batch processing")
+    print("\n" + "="*70 + "\n")
 
-    examples = [
-        ("Simple Text to Flowchart", example_simple_text_to_flowchart),
-        ("Complex Decision Flow", example_complex_decision_flow),
-        ("Batch Processing", example_batch_processing),
-        ("Real-World Use Case", example_real_world_use_case),
-    ]
+    print("⚠️  Note: Some demos require a valid Gemini API key.")
+    print("   Check config.json and ensure your key has proper permissions.\n")
 
-    results = []
-    for name, example_func in examples:
-        try:
-            result = await example_func()
-            results.append((name, True, result))
-        except Exception as e:
-            print(f"\n❌ {name} failed: {e}")
-            results.append((name, False, None))
+    if quick_mode:
+        print("🚀 QUICK MODE: Running Demo 1 only\n")
+        await demo_1_text_to_mermaid()
+    else:
+        # Run all demos
+        await demo_1_text_to_mermaid()
+        await demo_2_text_to_image()
+        await demo_3_combined_output()
+        await demo_4_image_to_mermaid()
+        await demo_5_all_features_showcase()
 
-    # Final summary
     print("\n" + "="*70)
-    print("📊 DEMO SUMMARY")
+    print("🎉 ALL DEMOS COMPLETED")
     print("="*70)
-
-    successful = sum(1 for _, success, _ in results if success)
-    total = len(results)
-
-    print(f"\nCompleted: {successful}/{total} examples")
-
-    for name, success, _ in results:
-        status = "✅" if success else "❌"
-        print(f"  {status} {name}")
-
-    if successful == total:
-        print("\n🎉 All examples completed successfully!")
-        print("\n💡 Next Steps:")
-        print("  1. Try modifying the examples above")
-        print("  2. Add your own process descriptions")
-        print("  3. Check the generated .mmd files")
-        print("  4. Ready for Phase 2: Add image input support!")
-    else:
-        print(f"\n⚠️  {total - successful} example(s) failed")
-        print("\nTroubleshooting:")
-        print("  - Make sure Ollama is running: ollama serve")
-        print("  - Check model is available: ollama list")
-        print("  - Verify config.json settings")
-
-
-def main():
-    """Main entry point"""
-    if len(sys.argv) > 1:
-        if sys.argv[1] in ['--quick', '-q']:
-            # Quick test only
-            asyncio.run(quick_test())
-        elif sys.argv[1] in ['--help', '-h']:
-            print(__doc__)
-            print("\nOptions:")
-            print("  --quick, -q    Run quick test only")
-            print("  --help, -h     Show this help message")
-        else:
-            print(f"Unknown option: {sys.argv[1]}")
-            print("Use --help for available options")
-    else:
-        # Run all examples
-        asyncio.run(run_all_examples())
+    print("\nGenerated files:")
+    print("  - demo_text_to_mermaid.mmd")
+    if not quick_mode:
+        print("  - demo_text_to_image.png")
+        print("  - demo_combined.mmd")
+        print("  - demo_combined.png")
+        print("  - demo_image_to_mermaid.mmd (if image provided)")
+    print("\n" + "="*70 + "\n")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
