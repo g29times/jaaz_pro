@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Test outputs
+test_output_*.png
+test_output_*.mmd
+test_output_*.jpg
+demo_*.png
+demo_*.mmd
+example_*.png
+example_*.mmd
+
+# Logs
+*.log
+sketch_to_mermaid*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Config with secrets (keep template)
+config.json
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Coverage reports
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Generated documentation
+docs/_build/

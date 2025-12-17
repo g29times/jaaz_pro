@@ -18,7 +18,7 @@
     },
     "mermaid_generator": {
         "llm_provider": "gemini",
-        "gemini_api_key": "AIzaSyDSp5dIWUB0vYqIKB17GHbhipGKv_OJd5E",
+        "gemini_api_key": "YOUR_GEMINI_API_KEY_HERE",
         "gemini_model": "gemini-2.5-flash",
         "ollama_url": "http://localhost:11434",
         "ollama_model": "qwen2.5vl:latest",
@@ -28,13 +28,15 @@
         "use_intelligent_analysis": true
     },
     "image_generator": {
-        "provider": "imagen",
-        "google_cloud_project_id": "YOUR_GOOGLE_CLOUD_PROJECT_ID",
-        "google_cloud_location": "us-central1",
-        "imagen_model_version": "imagegeneration@006",
-        "number_of_images": 1,
-        "guidance_scale": 15,
-        "add_watermark": false,
-        "default_style": "professional diagram"
+        "provider": "gemini",
+        "comment": "NOTE: This section is for legacy Vertex AI Imagen. Current implementation uses Gemini native image generation (gemini-2.5-flash-image) which requires no additional config beyond the gemini_api_key above."
+    },
+    "_instructions": {
+        "setup": [
+            "1. Copy this file to config.json",
+            "2. Get your Gemini API key from https://aistudio.google.com/app/apikey",
+            "3. Replace YOUR_GEMINI_API_KEY_HERE with your actual API key",
+            "4. (Optional) Configure Ollama fallback if you want offline support"
+        ]
     }
 }
